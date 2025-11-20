@@ -67,9 +67,9 @@
     <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40 transition-colors duration-200">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Spring Schedule</h1>
-            <!-- Re-added missing date element to fix JS error -->
             <p id="current-date" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
-            <p class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">CHE 383, CHE 331, AMS 161, WRT 102, SBU 102</p>
+            <!-- Updated: Added ID to make this dynamic -->
+            <p id="daily-course-list" class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">Loading classes...</p>
         </div>
         
         <div class="flex items-center gap-4">
@@ -201,7 +201,6 @@
         const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
         
         // Colors with Dark Mode variants
-        // Note: Tailwind 'dark:' classes are handled in the class string construction
         const colors = {
             'CHE 383': {
                 light: 'bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200',
@@ -276,7 +275,6 @@
 
         // --- Dark Mode Logic ---
         function initDarkMode() {
-            // Check local storage or system preference
             if (localStorage.getItem('theme') === 'dark' || 
                 (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
@@ -335,7 +333,6 @@
                 const codeKey = event.title.substring(0, 7);
                 const colorSet = colors[codeKey] || { light: 'bg-gray-100 border-gray-300 text-gray-800', dark: 'dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200' };
                 
-                // Combine Light and Dark classes
                 const colorClass = `${colorSet.light} ${colorSet.dark}`;
 
                 card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorClass}`;
@@ -428,7 +425,7 @@
             const now = new Date();
             const currentHour = now.getHours();
             const currentMin = now.getMinutes();
-            const currentDayIndex = now.getDay(); // 0=Sun, 1=Mon...
+            const currentDayIndex = now.getDay(); 
             const dayMap = [null, 'mon', 'tue', 'wed', 'thu', 'fri', null];
             const currentDayKey = dayMap[currentDayIndex];
 
@@ -457,6 +454,28 @@
 
             // 2. Update "Up Next" Banner
             updateUpNextBanner(currentDayKey, absoluteNowMins);
+
+            // 3. Update Daily Header List
+            updateDailyHeader(currentDayKey);
+        }
+
+        function updateDailyHeader(dayKey) {
+            const listEl = document.getElementById('daily-course-list');
+            if (!listEl) return;
+            
+            if (!dayKey) {
+                 listEl.innerText = "No classes today";
+                 return;
+            }
+            
+            const todayClasses = schedule.filter(e => e.day === dayKey);
+            if (todayClasses.length === 0) {
+                 listEl.innerText = "No classes today";
+            } else {
+                 // Extract pure course codes (e.g. "CHE 383" from "CHE 383 - 01")
+                 const uniqueCodes = [...new Set(todayClasses.map(e => e.title.split(' - ')[0]))];
+                 listEl.innerText = uniqueCodes.join(', ');
+            }
         }
 
         function updateUpNextBanner(currentDayKey, absoluteNowMins) {
@@ -467,14 +486,12 @@
             let subMessage = '';
 
             if (!currentDayKey) {
-                // Weekend
                 message = "Relax! It's the weekend. 😎";
                 subMessage = "No classes today.";
             } else {
                 // Filter events for today and sort
                 const todayEvents = schedule.filter(e => e.day === currentDayKey).sort((a, b) => getAbsoluteMinutes(a.start) - getAbsoluteMinutes(b.start));
                 
-                // Find status
                 let found = false;
 
                 for (let event of todayEvents) {
@@ -482,14 +499,12 @@
                     const end = getAbsoluteMinutes(event.end);
 
                     if (absoluteNowMins >= start && absoluteNowMins < end) {
-                        // CURRENTLY IN CLASS
                         const minsLeft = end - absoluteNowMins;
                         message = `Now: ${event.title.split('-')[0]}`;
                         subMessage = `Ends in ${minsLeft} min • ${event.loc}`;
                         found = true;
                         break;
                     } else if (start > absoluteNowMins) {
-                        // UPCOMING CLASS
                         const minsUntil = start - absoluteNowMins;
                         let timeStr = minsUntil > 60 ? `${Math.floor(minsUntil/60)} hr ${minsUntil%60} min` : `${minsUntil} min`;
                         message = `Next: ${event.title.split('-')[0]}`;
@@ -502,10 +517,9 @@
                 if (!found) {
                     // End of day check
                     if (todayEvents.length > 0 && absoluteNowMins > getAbsoluteMinutes(todayEvents[todayEvents.length-1].end)) {
-                        message = "All done for today! 🎉";
-                        subMessage = "See you tomorrow.";
+                        message = "Finished"; // CHANGED: Purple "Finished"
+                        subMessage = ""; // CHANGED: Empty string
                     } else if (absoluteNowMins < (START_HOUR * 60)) {
-                         // Before school starts
                          const firstEvent = todayEvents[0];
                          const start = getAbsoluteMinutes(firstEvent.start);
                          const minsUntil = start - absoluteNowMins;
@@ -521,7 +535,7 @@
                 <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</p>
                 <div class="flex flex-col items-end">
                     <span class="font-bold text-indigo-600 dark:text-indigo-400 text-lg leading-none">${message}</span>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">${subMessage}</span>
+                    ${subMessage ? `<span class="text-sm text-gray-500 dark:text-gray-400">${subMessage}</span>` : ''}
                 </div>
             `;
 
@@ -529,7 +543,7 @@
             mobileContainer.innerHTML = `
                 <div class="flex flex-col">
                     <span class="font-bold text-white leading-tight">${message}</span>
-                    <span class="text-xs text-indigo-200">${subMessage}</span>
+                    ${subMessage ? `<span class="text-xs text-indigo-200">${subMessage}</span>` : ''}
                 </div>
                 ${message.includes('Now') ? '<span class="animate-pulse w-2 h-2 bg-red-400 rounded-full"></span>' : ''}
             `;
@@ -549,7 +563,7 @@
         
         // Start Loop
         updateLiveFeatures();
-        setInterval(updateLiveFeatures, 60000); // Update every minute
+        setInterval(updateLiveFeatures, 60000); 
 
     </script>
 </body>
