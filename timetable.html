@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Weekly Timetable</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom scrollbar for cleaner look */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        .event-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .event-card:hover {
+            transform: scale(1.02);
+            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Current Time Indicator */
+        #current-time-line {
+            pointer-events: none;
+            transition: top 0.5s ease-in-out;
+        }
+        #current-time-line::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: -5px;
+            width: 10px;
+            height: 10px;
+            background-color: #ef4444; /* red-500 */
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-30">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Spring Schedule</h1>
+            <p class="text-sm text-gray-500">CHE 383, CHE 331, AMS 161, WRT 102, SBU 102</p>
+        </div>
+        <div class="text-right hidden sm:block">
+            <p class="text-sm font-medium" id="current-date">Today is Monday</p>
+            <p class="text-xs text-gray-400">8:00 AM - 6:00 PM</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8">
+        
+        <!-- Visual Schedule Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h2 class="font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Weekly Overview
+                </h2>
+                <div id="live-indicator-status" class="text-xs font-medium text-red-500 hidden items-center gap-1 animate-pulse">
+                    <span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE
+                </div>
+            </div>
+            
+            <div class="relative overflow-x-auto" style="max-height: 80vh;">
+                <div class="min-w-[800px] relative flex">
+                    <!-- Time Column -->
+                    <div class="w-16 flex-shrink-0 bg-white border-r border-gray-200 sticky left-0 z-20">
+                        <div class="h-10 bg-gray-50 border-b border-gray-200 sticky top-0 z-30"></div> <!-- Header spacer -->
+                        <div id="time-labels" class="relative" style="height: 1080px;"></div>
+                    </div>
+
+                    <!-- Schedule Grid -->
+                    <div class="flex-1 relative">
+                        <!-- Days Header -->
+                        <div class="grid grid-cols-5 border-b border-gray-200 bg-gray-50 sticky top-0 z-10 shadow-sm">
+                            <div class="text-center py-2 border-r border-gray-200 font-semibold text-gray-700 text-sm" id="header-mon">Mon</div>
+                            <div class="text-center py-2 border-r border-gray-200 font-semibold text-gray-700 text-sm" id="header-tue">Tue</div>
+                            <div class="text-center py-2 border-r border-gray-200 font-semibold text-gray-700 text-sm" id="header-wed">Wed</div>
+                            <div class="text-center py-2 border-r border-gray-200 font-semibold text-gray-700 text-sm" id="header-thu">Thu</div>
+                            <div class="text-center py-2 font-semibold text-gray-700 text-sm" id="header-fri">Fri</div>
+                        </div>
+
+                        <!-- Days Columns Container -->
+                        <div class="grid grid-cols-5 h-[1080px] relative bg-white" id="schedule-container">
+                            <!-- Grid Lines -->
+                            <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(10,1fr)] w-full h-full z-0">
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                                <div class="border-b border-gray-100 w-full"></div>
+                            </div>
+
+                            <!-- Current Time Line (Injected here) -->
+                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-40 hidden"></div>
+
+                            <!-- Day Columns -->
+                            <div class="relative border-r border-gray-100 h-full hover:bg-gray-50/30 transition-colors" id="col-mon"></div>
+                            <div class="relative border-r border-gray-100 h-full hover:bg-gray-50/30 transition-colors" id="col-tue"></div>
+                            <div class="relative border-r border-gray-100 h-full hover:bg-gray-50/30 transition-colors" id="col-wed"></div>
+                            <div class="relative border-r border-gray-100 h-full hover:bg-gray-50/30 transition-colors" id="col-thu"></div>
+                            <div class="relative h-full hover:bg-gray-50/30 transition-colors" id="col-fri"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Free Time Table Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h2 class="font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Free Time Slots
+                </h2>
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">Between 8:00 AM - 6:00 PM</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 w-32">Day</th>
+                            <th scope="col" class="px-6 py-3">Free Time Interval</th>
+                            <th scope="col" class="px-6 py-3 w-32 text-right">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="free-time-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Configuration
+        const START_HOUR = 8; 
+        const END_HOUR = 18; 
+        const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
+        
+        // Colors
+        const colors = {
+            'CHE 383': 'bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200',
+            'CHE 331': 'bg-blue-100 border-blue-300 text-blue-900 hover:bg-blue-200',
+            'AMS 161': 'bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200',
+            'WRT 102': 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200',
+            'SBU 102': 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200'
+        };
+
+        // Schedule Data
+        const schedule = [
+            { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137' },
+            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103' },
+            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143' },
+            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354' },
+            { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023' },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103' },
+            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143' },
+            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119' },
+            { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023' },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103' },
+            { day: 'fri', title: 'SBU 102 - S143', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Soc & Behav Sci N703' },
+        ];
+
+        // Helper Functions
+        function getMinutesFromStart(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return ((hours * 60) + minutes) - (START_HOUR * 60);
+        }
+
+        function getAbsoluteMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return (hours * 60) + minutes;
+        }
+
+        function formatTime(timeStr) {
+            let [h, m] = timeStr.split(':');
+            h = parseInt(h);
+            const suffix = h >= 12 ? 'PM' : 'AM';
+            const h12 = h > 12 ? h - 12 : h;
+            return `${h12}:${m} ${suffix}`;
+        }
+
+        function formatDuration(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            if (h > 0 && m > 0) return `${h} hr ${m} min`;
+            if (h > 0) return `${h} hr`;
+            return `${m} min`;
+        }
+
+        function minutesToTimeStr(totalMinutes) {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            const pad = (n) => n < 10 ? '0' + n : n;
+            return `${h}:${pad(m)}`;
+        }
+
+        function renderSchedule() {
+            const timeContainer = document.getElementById('time-labels');
+            timeContainer.innerHTML = ''; 
+            for (let h = START_HOUR; h < END_HOUR; h++) {
+                const label = document.createElement('div');
+                label.className = 'absolute w-full text-right pr-2 text-xs text-gray-400 font-medium -mt-2';
+                const topPercent = ((h - START_HOUR) * 60 / TOTAL_MINUTES) * 100;
+                label.style.top = `${topPercent}%`;
+                const suffix = h >= 12 ? 'PM' : 'AM';
+                const displayHour = h > 12 ? h - 12 : h;
+                label.innerText = `${displayHour} ${suffix}`;
+                timeContainer.appendChild(label);
+            }
+
+            schedule.forEach(event => {
+                const container = document.getElementById(`col-${event.day}`);
+                if (!container) return;
+
+                const startMin = getMinutesFromStart(event.start);
+                const endMin = getMinutesFromStart(event.end);
+                const duration = endMin - startMin;
+
+                const topPercent = (startMin / TOTAL_MINUTES) * 100;
+                const heightPercent = (duration / TOTAL_MINUTES) * 100;
+
+                const card = document.createElement('div');
+                const codeKey = event.title.substring(0, 7);
+                const colorClass = colors[codeKey] || 'bg-gray-100 border-gray-300 text-gray-800';
+
+                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorClass}`;
+                card.style.top = `${topPercent}%`;
+                card.style.height = `${heightPercent}%`;
+                
+                const formatShort = (t) => {
+                    let [h, m] = t.split(':');
+                    h = parseInt(h);
+                    const h12 = h > 12 ? h - 12 : h;
+                    return `${h12}:${m}`;
+                };
+
+                // Map Link Logic
+                // Appending 'Stony Brook University' to ensure Google Maps finds the right building
+                const mapQuery = encodeURIComponent(`${event.loc} Stony Brook University`);
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+                card.innerHTML = `
+                    <div class="font-bold leading-tight mb-0.5 text-sm truncate">${event.title}</div>
+                    <div class="font-bold opacity-100 mb-1 inline-block bg-white/40 px-1 rounded text-[11px]">${formatShort(event.start)} - ${formatShort(event.end)}</div>
+                    <div class="opacity-90 leading-tight hidden md:block">${event.type}</div>
+                    
+                    <a href="${mapUrl}" target="_blank" title="Open in Google Maps" 
+                       class="mt-auto font-medium opacity-75 truncate leading-tight text-[10px] md:text-xs hover:underline hover:text-indigo-800 flex items-center gap-1 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-current opacity-50 group-hover:opacity-100" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                        </svg>
+                        ${event.loc}
+                    </a>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function calculateFreeTime() {
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            const dayNames = { 'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday', 'fri': 'Friday' };
+            const tbody = document.getElementById('free-time-body');
+            tbody.innerHTML = '';
+
+            days.forEach(day => {
+                const dayEvents = schedule
+                    .filter(e => e.day === day)
+                    .sort((a, b) => getAbsoluteMinutes(a.start) - getAbsoluteMinutes(b.start));
+
+                let currentTime = START_HOUR * 60;
+                const dayEndTime = END_HOUR * 60;
+                let gaps = [];
+
+                dayEvents.forEach(event => {
+                    const eventStart = getAbsoluteMinutes(event.start);
+                    const eventEnd = getAbsoluteMinutes(event.end);
+                    if (eventStart > currentTime) {
+                        gaps.push({ start: currentTime, end: eventStart });
+                    }
+                    currentTime = Math.max(currentTime, eventEnd);
+                });
+
+                if (currentTime < dayEndTime) {
+                    gaps.push({ start: currentTime, end: dayEndTime });
+                }
+
+                gaps.forEach((gap, index) => {
+                    if (gap.end - gap.start < 10) return; 
+
+                    const row = document.createElement('tr');
+                    row.className = "bg-white border-b hover:bg-gray-50 transition-colors";
+                    
+                    const dayLabel = index === 0 ? `<span class="font-medium text-gray-900">${dayNames[day]}</span>` : '';
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${dayLabel}</td>
+                        <td class="px-6 py-4 text-gray-600">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                ${formatTime(minutesToTimeStr(gap.start))} — ${formatTime(minutesToTimeStr(gap.end))}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right font-mono text-xs bg-gray-50/50">
+                            ${formatDuration(gap.end - gap.start)}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        function updateCurrentTimeLine() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMin = now.getMinutes();
+            const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, etc.
+
+            // Only show on weekdays (1-5)
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                document.getElementById('current-time-line').classList.add('hidden');
+                document.getElementById('live-indicator-status').classList.remove('flex');
+                document.getElementById('live-indicator-status').classList.add('hidden');
+                return;
+            }
+
+            // Calculate minutes from start of day (8 AM)
+            const minsFromStart = ((currentHour * 60) + currentMin) - (START_HOUR * 60);
+            
+            // Check if we are within the schedule timeframe
+            if (minsFromStart >= 0 && minsFromStart <= TOTAL_MINUTES) {
+                const percentage = (minsFromStart / TOTAL_MINUTES) * 100;
+                const line = document.getElementById('current-time-line');
+                line.style.top = `${percentage}%`;
+                line.classList.remove('hidden');
+                
+                // Show LIVE badge
+                const badge = document.getElementById('live-indicator-status');
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+
+                // Highlight today's header
+                const dayIds = [null, 'header-mon', 'header-tue', 'header-wed', 'header-thu', 'header-fri'];
+                const todayHeaderId = dayIds[dayOfWeek];
+                if (todayHeaderId) {
+                    document.querySelectorAll('[id^="header-"]').forEach(el => el.classList.remove('text-indigo-600', 'bg-indigo-50'));
+                    const header = document.getElementById(todayHeaderId);
+                    header.classList.add('text-indigo-600', 'bg-indigo-50');
+                }
+
+            } else {
+                document.getElementById('current-time-line').classList.add('hidden');
+                document.getElementById('live-indicator-status').classList.add('hidden');
+                document.getElementById('live-indicator-status').classList.remove('flex');
+            }
+        }
+
+        // Init
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
+        
+        renderSchedule();
+        calculateFreeTime();
+        
+        // Start Time Line
+        updateCurrentTimeLine();
+        setInterval(updateCurrentTimeLine, 60000); // Update every minute
+
+    </script>
+</body>
+</html>
