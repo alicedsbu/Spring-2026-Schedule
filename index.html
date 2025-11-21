@@ -215,11 +215,18 @@
                 <p class="text-gray-500 dark:text-gray-400">Distraction-free mode enabled.</p>
             </div>
 
-            <!-- Timer Circle -->
+            <!-- Timer Circle (SVG Ring) -->
             <div class="relative w-64 h-64 flex items-center justify-center">
-                <div class="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" style="animation-duration: 10s; animation-play-state: paused;" id="timer-spinner"></div>
-                <div class="text-6xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter" id="timer-display">25:00</div>
+                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                    <!-- Track -->
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700"/>
+                    <!-- Progress -->
+                    <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8"
+                            class="text-indigo-500 transition-all duration-1000 ease-linear"
+                            stroke-dasharray="565.48" stroke-dashoffset="0"
+                            stroke-linecap="round" />
+                </svg>
+                <div class="text-6xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter relative z-10" id="timer-display">25:00</div>
             </div>
 
             <!-- Controls -->
@@ -357,12 +364,15 @@
 
         // --- STUDY MODE (Pomodoro) Logic ---
         let timerInterval;
-        let timeLeft = 25 * 60; // 25 minutes in seconds
+        const TIME_LIMIT = 25 * 60; // 25 minutes in seconds
+        let timeLeft = TIME_LIMIT;
         let isRunning = false;
+        const FULL_DASH_ARRAY = 565.48; // 2 * pi * 90 (approx circumference for r=90)
 
         function openStudyMode() {
             const overlay = document.getElementById('study-overlay');
             overlay.classList.remove('hidden');
+            resetTimer(); // Ensure clean state on open
             // Trigger transition
             setTimeout(() => overlay.classList.remove('opacity-0'), 10);
         }
@@ -372,8 +382,6 @@
             overlay.classList.add('opacity-0');
             clearInterval(timerInterval);
             isRunning = false;
-            updateTimerDisplay();
-            updateTimerButton();
             setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
@@ -382,11 +390,9 @@
                 // Pause
                 clearInterval(timerInterval);
                 isRunning = false;
-                document.getElementById('timer-spinner').style.animationPlayState = 'paused';
             } else {
                 // Start
                 isRunning = true;
-                document.getElementById('timer-spinner').style.animationPlayState = 'running';
                 timerInterval = setInterval(() => {
                     if (timeLeft > 0) {
                         timeLeft--;
@@ -396,8 +402,9 @@
                         clearInterval(timerInterval);
                         isRunning = false;
                         // alert("Session complete! Take a break.");
-                        timeLeft = 25 * 60; // Reset
+                        timeLeft = TIME_LIMIT; // Reset
                         updateTimerDisplay();
+                        updateTimerButton();
                     }
                 }, 1000);
             }
@@ -407,16 +414,24 @@
         function resetTimer() {
             clearInterval(timerInterval);
             isRunning = false;
-            timeLeft = 25 * 60;
+            timeLeft = TIME_LIMIT;
             updateTimerDisplay();
             updateTimerButton();
-            document.getElementById('timer-spinner').style.animationPlayState = 'paused';
+            // Reset circle to full
+            document.getElementById('timer-progress').style.strokeDashoffset = 0;
         }
 
         function updateTimerDisplay() {
+            // Update numbers
             const m = Math.floor(timeLeft / 60);
             const s = timeLeft % 60;
             document.getElementById('timer-display').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+
+            // Update SVG Ring
+            const rawTimeFraction = timeLeft / TIME_LIMIT;
+            const timeFraction = rawTimeFraction > 0 ? rawTimeFraction : 0; // ensure not below 0
+            const circleDashoffset = FULL_DASH_ARRAY - (timeFraction * FULL_DASH_ARRAY);
+            document.getElementById('timer-progress').style.strokeDashoffset = circleDashoffset;
         }
 
         function updateTimerButton() {
