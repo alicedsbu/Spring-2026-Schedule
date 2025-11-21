@@ -32,15 +32,24 @@
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* Custom scrollbar for cleaner look */
+        /* Custom scrollbar for cleaner look - Global */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
         
-        /* Dark mode scrollbar */
+        /* Dark mode scrollbar - Global */
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
         .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        /* Hide scrollbar for specific element, but keep functionality */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
 
         .event-card {
             transition: transform 0.2s, box-shadow 0.2s;
@@ -124,7 +133,7 @@
                 </div>
             </div>
             
-            <div class="relative overflow-x-auto" style="max-height: 80vh;">
+            <div class="relative overflow-x-auto no-scrollbar" style="max-height: 80vh;">
                 <div class="min-w-[800px] relative flex">
                     <!-- Time Column -->
                     <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-20 transition-colors duration-200">
