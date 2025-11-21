@@ -423,6 +423,112 @@
             }
         }
 
+        // --- STUDY MODE (Pomodoro) Logic ---
+        let timerInterval;
+        const TIME_LIMIT = 25 * 60; // 25 minutes in seconds
+        let timeLeft = TIME_LIMIT;
+        let isRunning = false;
+        const FULL_DASH_ARRAY = 565.48; // 2 * pi * 90 (approx circumference for r=90)
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function openStudyMode() {
+            const overlay = document.getElementById('study-overlay');
+            overlay.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); // Hide scrollbar
+            resetTimer(); // Ensure clean state on open
+            // Trigger transition
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        }
+
+        function exitStudyMode() {
+            const overlay = document.getElementById('study-overlay');
+            overlay.classList.add('opacity-0');
+            clearInterval(timerInterval);
+            isRunning = false;
+            
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden'); // Restore scrollbar
+            }, 300);
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                // Pause
+                clearInterval(timerInterval);
+                isRunning = false;
+            } else {
+                // Start
+                isRunning = true;
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        // Timer finished
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        // alert("Session complete! Take a break.");
+                        timeLeft = TIME_LIMIT; // Reset
+                        updateTimerDisplay();
+                        updateTimerButton();
+                    }
+                }, 1000);
+            }
+            updateTimerButton();
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = TIME_LIMIT;
+            updateTimerDisplay();
+            updateTimerButton();
+            // Reset circle to full
+            document.getElementById('timer-progress').style.strokeDashoffset = 0;
+        }
+
+        function updateTimerDisplay() {
+            // Update numbers
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('timer-display').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+
+            // Update SVG Ring
+            const rawTimeFraction = timeLeft / TIME_LIMIT;
+            const timeFraction = rawTimeFraction > 0 ? rawTimeFraction : 0; // ensure not below 0
+            const circleDashoffset = FULL_DASH_ARRAY - (timeFraction * FULL_DASH_ARRAY);
+            document.getElementById('timer-progress').style.strokeDashoffset = circleDashoffset;
+        }
+
+        function updateTimerButton() {
+            const btn = document.getElementById('timer-btn');
+            if (isRunning) {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg> Pause`;
+                btn.classList.replace('bg-indigo-600', 'bg-amber-500');
+                btn.classList.replace('hover:bg-indigo-700', 'hover:bg-amber-600');
+            } else {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg> Start`;
+                btn.classList.replace('bg-amber-500', 'bg-indigo-600');
+                btn.classList.replace('hover:bg-amber-600', 'hover:bg-indigo-700');
+            }
+        }
+
         // --- Rendering Logic ---
         function renderSchedule() {
             const timeContainer = document.getElementById('time-labels');
@@ -703,108 +809,6 @@
                 </div>
                 ${message.includes('Now') ? '<span class="animate-pulse w-2 h-2 bg-red-400 rounded-full"></span>' : ''}
             `;
-        }
-
-        // --- STUDY MODE (Pomodoro) Logic ---
-        let timerInterval;
-        const TIME_LIMIT = 25 * 60; // 25 minutes in seconds
-        let timeLeft = TIME_LIMIT;
-        let isRunning = false;
-        const FULL_DASH_ARRAY = 565.48; // 2 * pi * 90 (approx circumference for r=90)
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
-        function openStudyMode() {
-            const overlay = document.getElementById('study-overlay');
-            overlay.classList.remove('hidden');
-            resetTimer(); // Ensure clean state on open
-            // Trigger transition
-            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-        }
-
-        function exitStudyMode() {
-            const overlay = document.getElementById('study-overlay');
-            overlay.classList.add('opacity-0');
-            clearInterval(timerInterval);
-            isRunning = false;
-            
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-        }
-
-        function toggleTimer() {
-            if (isRunning) {
-                // Pause
-                clearInterval(timerInterval);
-                isRunning = false;
-            } else {
-                // Start
-                isRunning = true;
-                timerInterval = setInterval(() => {
-                    if (timeLeft > 0) {
-                        timeLeft--;
-                        updateTimerDisplay();
-                    } else {
-                        // Timer finished
-                        clearInterval(timerInterval);
-                        isRunning = false;
-                        // alert("Session complete! Take a break.");
-                        timeLeft = TIME_LIMIT; // Reset
-                        updateTimerDisplay();
-                        updateTimerButton();
-                    }
-                }, 1000);
-            }
-            updateTimerButton();
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            timeLeft = TIME_LIMIT;
-            updateTimerDisplay();
-            updateTimerButton();
-            // Reset circle to full
-            document.getElementById('timer-progress').style.strokeDashoffset = 0;
-        }
-
-        function updateTimerDisplay() {
-            // Update numbers
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            document.getElementById('timer-display').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-
-            // Update SVG Ring
-            const rawTimeFraction = timeLeft / TIME_LIMIT;
-            const timeFraction = rawTimeFraction > 0 ? rawTimeFraction : 0; // ensure not below 0
-            const circleDashoffset = FULL_DASH_ARRAY - (timeFraction * FULL_DASH_ARRAY);
-            document.getElementById('timer-progress').style.strokeDashoffset = circleDashoffset;
-        }
-
-        function updateTimerButton() {
-            const btn = document.getElementById('timer-btn');
-            if (isRunning) {
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg> Pause`;
-                btn.classList.replace('bg-indigo-600', 'bg-amber-500');
-                btn.classList.replace('hover:bg-indigo-700', 'hover:bg-amber-600');
-            } else {
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg> Start`;
-                btn.classList.replace('bg-amber-500', 'bg-indigo-600');
-                btn.classList.replace('hover:bg-amber-600', 'hover:bg-indigo-700');
-            }
         }
 
 
