@@ -66,6 +66,11 @@
             background-color: #ef4444;
             border-radius: 50%;
         }
+
+        /* Study Mode Overlay Transition */
+        #study-overlay {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200 relative">
@@ -197,6 +202,56 @@
         </div>
 
     </main>
+
+    <!-- STUDY MODE OVERLAY -->
+    <div id="study-overlay" class="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0">
+        <!-- Background Pulse Effect -->
+        <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
+        
+        <!-- Content -->
+        <div class="z-10 flex flex-col items-center gap-8 p-8 max-w-md w-full">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Focus Session</h2>
+                <p class="text-gray-500 dark:text-gray-400">Distraction-free mode enabled.</p>
+            </div>
+
+            <!-- Timer Circle (SVG Ring) -->
+            <div class="relative w-64 h-64 flex items-center justify-center">
+                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                    <!-- Track -->
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700"/>
+                    <!-- Progress -->
+                    <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8"
+                            class="text-indigo-500 transition-all duration-1000 ease-linear"
+                            stroke-dasharray="565.48" stroke-dashoffset="0"
+                            stroke-linecap="round" />
+                </svg>
+                <div class="text-6xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter relative z-10" id="timer-display">25:00</div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <button onclick="toggleTimer()" id="timer-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    Start
+                </button>
+                <button onclick="resetTimer()" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-all" title="Reset">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+            </div>
+
+            <button onclick="exitStudyMode()" class="text-sm text-gray-400 hover:text-red-500 mt-8 transition-colors flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Exit Study Mode
+            </button>
+        </div>
+    </div>
 
     <script>
         // Configuration
@@ -351,6 +406,83 @@
             }
         }
 
+        // --- STUDY MODE (Pomodoro) Logic ---
+        let timerInterval;
+        const TIME_LIMIT = 25 * 60; 
+        let timeLeft = TIME_LIMIT;
+        let isRunning = false;
+        const FULL_DASH_ARRAY = 565.48; 
+
+        function openStudyMode() {
+            const overlay = document.getElementById('study-overlay');
+            overlay.classList.remove('hidden');
+            resetTimer(); 
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        }
+
+        function exitStudyMode() {
+            const overlay = document.getElementById('study-overlay');
+            overlay.classList.add('opacity-0');
+            clearInterval(timerInterval);
+            isRunning = false;
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+            } else {
+                isRunning = true;
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        timeLeft = TIME_LIMIT; 
+                        updateTimerDisplay();
+                        updateTimerButton();
+                    }
+                }, 1000);
+            }
+            updateTimerButton();
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = TIME_LIMIT;
+            updateTimerDisplay();
+            updateTimerButton();
+            document.getElementById('timer-progress').style.strokeDashoffset = 0;
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('timer-display').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+
+            const rawTimeFraction = timeLeft / TIME_LIMIT;
+            const timeFraction = rawTimeFraction > 0 ? rawTimeFraction : 0; 
+            const circleDashoffset = FULL_DASH_ARRAY - (timeFraction * FULL_DASH_ARRAY);
+            document.getElementById('timer-progress').style.strokeDashoffset = circleDashoffset;
+        }
+
+        function updateTimerButton() {
+            const btn = document.getElementById('timer-btn');
+            if (isRunning) {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg> Pause`;
+                btn.classList.replace('bg-indigo-600', 'bg-amber-500');
+                btn.classList.replace('hover:bg-indigo-700', 'hover:bg-amber-600');
+            } else {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg> Start`;
+                btn.classList.replace('bg-amber-500', 'bg-indigo-600');
+                btn.classList.replace('hover:bg-amber-600', 'hover:bg-indigo-700');
+            }
+        }
+
         // --- Rendering Logic ---
         function renderSchedule() {
             const timeContainer = document.getElementById('time-labels');
@@ -379,7 +511,6 @@
 
                 const card = document.createElement('div');
                 const codeKey = event.title.substring(0, 7);
-                // Fallback to default color if course code not found
                 const colorSet = colors[codeKey] || colors['default'];
                 
                 const colorClass = `${colorSet.light} ${colorSet.dark}`;
@@ -455,7 +586,6 @@
                     
                     const dayLabel = index === 0 ? `<span class="font-medium text-gray-900 dark:text-gray-100">${dayNames[day]}</span>` : '';
                     
-                    // Only show button if gap is > 20 mins
                     const duration = gap.end - gap.start;
                     const showButton = duration >= 20;
 
@@ -469,7 +599,11 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <!-- Actions can go here -->
+                            ${showButton ? 
+                                `<button onclick="openStudyMode()" class="opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-3 py-1.5 rounded-full font-medium hover:bg-indigo-100 dark:hover:bg-indigo-800">
+                                    Focus Mode
+                                </button>` : ''
+                            }
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -489,7 +623,6 @@
             const minsFromStart = ((currentHour * 60) + currentMin) - (START_HOUR * 60);
             const absoluteNowMins = (currentHour * 60) + currentMin;
 
-            // 1. Update Time Line
             if (currentDayKey && minsFromStart >= 0 && minsFromStart <= TOTAL_MINUTES) {
                 const percentage = (minsFromStart / TOTAL_MINUTES) * 100;
                 const line = document.getElementById('current-time-line');
@@ -508,13 +641,8 @@
                 document.getElementById('live-indicator-status').classList.remove('flex');
             }
 
-            // 2. Update Banner
             updateUpNextBanner(currentDayKey, absoluteNowMins);
-
-            // 3. Update Daily Header List
             updateDailyHeader(currentDayKey);
-
-            // 4. Update Active Free Slot Highlight
             updateActiveFreeSlot();
         }
 
@@ -532,11 +660,9 @@
                 const rStart = parseInt(row.dataset.start);
                 const rEnd = parseInt(row.dataset.end);
 
-                // Reset style
                 row.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/50', 'border-indigo-500');
                 
                 if (currentDayKey === rDay && currentMinutes >= rStart && currentMinutes < rEnd) {
-                    // Active!
                     row.classList.add('bg-indigo-100', 'dark:bg-indigo-900/50');
                 }
             });
@@ -555,7 +681,6 @@
             if (todayClasses.length === 0) {
                  listEl.innerText = "No classes today";
             } else {
-                 // Extract pure course codes
                  const uniqueCodes = [...new Set(todayClasses.map(e => e.title.split(' - ')[0]))];
                  listEl.innerText = uniqueCodes.join(', ');
             }
