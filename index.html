@@ -18,6 +18,13 @@
                         },
                         indigo: {
                             950: '#1e1b4b',
+                        },
+                        gold: {
+                            100: '#fef9c3',
+                            200: '#fde047',
+                            300: '#facc15',
+                            400: '#eab308',
+                            900: '#713f12',
                         }
                     },
                     animation: {
@@ -32,28 +39,45 @@
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* --- Custom Clean Scrollbar --- */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        /* --- Custom Clean Scrollbar (VISIBLE) --- */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
         
-        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; }
+        .dark ::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
 
         .event-card {
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+            z-index: 10; /* Base Z-Index */
         }
         .event-card:hover {
             transform: scale(1.02);
-            z-index: 40;
+            z-index: 30; /* Hover Z-Index (Above shared, below headers) */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Comparison Mode Styles */
+        .comparing .event-card {
+            opacity: 0.15; 
+            pointer-events: none;
+        }
+        .shared-gap-card {
+            animation: popIn 0.3s ease-out forwards;
+            z-index: 20; /* Above normal cards, below hover/headers */
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         /* Current Time Indicator */
         #current-time-line {
             pointer-events: none;
             transition: top 0.5s ease-in-out;
+            z-index: 25; /* Above shared cards */
         }
         #current-time-line::before {
             content: '';
@@ -72,11 +96,10 @@
         }
     </style>
 </head>
-<!-- Removed overflow-hidden and h-screen to allow natural page scrolling -->
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200 relative">
 
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-30 transition-colors duration-200">
+    <!-- Header (Z-50 to stay on top of everything) -->
+    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200">
         <div>
             <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">Weekly Schedule</h1>
             <p id="current-date" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
@@ -88,6 +111,11 @@
             <div id="up-next-desktop" class="hidden md:block text-right mr-4">
                 <!-- Injected by JS -->
             </div>
+            
+            <!-- Compare Button -->
+            <button onclick="toggleCompareMode()" id="compare-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Find Shared Free Time">
+                <span class="text-lg">⏳</span>
+            </button>
 
             <!-- Dark Mode Toggle -->
             <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -113,7 +141,7 @@
         <!-- Visual Schedule Section -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-200">
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center">
-                <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2" id="schedule-heading">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -124,18 +152,18 @@
                 </div>
             </div>
             
-            <div class="relative overflow-x-auto">
+            <div class="relative overflow-x-auto" style="max-height: 80vh;">
                 <div class="min-w-[800px] relative flex">
-                    <!-- Time Column -->
-                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-20 transition-colors duration-200">
-                        <div class="h-10 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30"></div> <!-- Header spacer -->
+                    <!-- Time Column (Z-40 to stay above cards) -->
+                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-40 transition-colors duration-200">
+                        <div class="h-10 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40"></div> <!-- Header spacer -->
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
 
                     <!-- Schedule Grid -->
                     <div class="flex-1 relative bg-white dark:bg-gray-800 transition-colors duration-200">
-                        <!-- Days Header -->
-                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-10 shadow-sm transition-colors duration-200">
+                        <!-- Days Header (Z-40 to stay above cards) -->
+                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 shadow-sm transition-colors duration-200">
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-mon">Mon</div>
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-tue">Tue</div>
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-wed">Wed</div>
@@ -145,7 +173,7 @@
 
                         <!-- Days Columns Container -->
                         <div class="grid grid-cols-5 h-[1188px] relative" id="schedule-container">
-                            <!-- Grid Lines -->
+                            <!-- Grid Lines (Z-0) -->
                             <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(11,1fr)] w-full h-full z-0">
                                 <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
                                 <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
@@ -161,7 +189,7 @@
                             </div>
 
                             <!-- Current Time Line -->
-                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-40 hidden"></div>
+                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-20 hidden"></div>
 
                             <!-- Day Columns -->
                             <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-mon"></div>
@@ -178,13 +206,13 @@
         <!-- Free Time Table Section -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center">
-                <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2" id="free-time-heading">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Free Time Slots
                 </h2>
-                <span class="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full">Between 8:00 AM - 7:00 PM</span>
+                <span id="free-time-badge" class="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full">Between 8:00 AM - 7:00 PM</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
@@ -204,8 +232,8 @@
 
     </main>
 
-    <!-- STUDY MODE OVERLAY -->
-    <div id="study-overlay" class="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
+    <!-- STUDY MODE OVERLAY (Z-60 to be above header) -->
+    <div id="study-overlay" class="fixed inset-0 z-60 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
         <!-- Background Pulse Effect -->
         <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
         
@@ -396,6 +424,167 @@
             }
         }
 
+        let isComparing = false;
+
+        function toggleCompareMode() {
+            isComparing = !isComparing;
+            
+            const container = document.querySelector('main'); 
+            if (isComparing) {
+                container.classList.add('comparing');
+                const btn = document.getElementById('compare-btn');
+                btn.classList.add('bg-indigo-100', 'text-indigo-600', 'ring-2', 'ring-indigo-500');
+                renderSharedGaps();
+            } else {
+                container.classList.remove('comparing');
+                const btn = document.getElementById('compare-btn');
+                btn.classList.remove('bg-indigo-100', 'text-indigo-600', 'ring-2', 'ring-indigo-500');
+                
+                document.querySelectorAll('.shared-gap-card').forEach(el => el.remove());
+                calculateFreeTime();
+            }
+        }
+
+        function renderSharedGaps() {
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            const sharedGapsList = [];
+
+            days.forEach(day => {
+                const eventsA = schedules['alice'].filter(e => e.day === day).map(e => ({ start: getAbsoluteMinutes(e.start), end: getAbsoluteMinutes(e.end) }));
+                const eventsD = schedules['daniel'].filter(e => e.day === day).map(e => ({ start: getAbsoluteMinutes(e.start), end: getAbsoluteMinutes(e.end) }));
+                
+                let allBusy = [...eventsA, ...eventsD].sort((a, b) => a.start - b.start);
+                
+                let mergedBusy = [];
+                if (allBusy.length > 0) {
+                    let current = allBusy[0];
+                    for (let i = 1; i < allBusy.length; i++) {
+                        if (allBusy[i].start < current.end) {
+                            current.end = Math.max(current.end, allBusy[i].end);
+                        } else {
+                            mergedBusy.push(current);
+                            current = allBusy[i];
+                        }
+                    }
+                    mergedBusy.push(current);
+                }
+
+                let currentTime = START_HOUR * 60;
+                const dayEndTime = END_HOUR * 60;
+                const dayGaps = [];
+
+                mergedBusy.forEach(busy => {
+                    if (busy.start > currentTime) {
+                        dayGaps.push({ start: currentTime, end: busy.start });
+                    }
+                    currentTime = Math.max(currentTime, busy.end);
+                });
+                
+                if (currentTime < dayEndTime) {
+                    dayGaps.push({ start: currentTime, end: dayEndTime });
+                }
+
+                const col = document.getElementById(`col-${day}`);
+                
+                dayGaps.forEach(gap => {
+                    if (gap.end - gap.start < 15) return;
+
+                    sharedGapsList.push({ day, start: gap.start, end: gap.end });
+
+                    const startMinFrom8 = gap.start - (START_HOUR * 60);
+                    const duration = gap.end - gap.start;
+                    const topPercent = (startMinFrom8 / TOTAL_MINUTES) * 100;
+                    const heightPercent = (duration / TOTAL_MINUTES) * 100;
+
+                    const div = document.createElement('div');
+                    div.className = "absolute inset-x-2 rounded p-2 flex flex-col justify-center items-center text-center cursor-pointer shared-gap-card bg-gold-200/90 border-l-4 border-gold-400 text-gold-900 shadow-lg hover:bg-gold-300";
+                    div.style.top = `${topPercent}%`;
+                    div.style.height = `${heightPercent}%`;
+                    
+                    const otherPerson = currentUser === 'alice' ? 'Daniel' : 'Alice';
+                    div.innerHTML = `
+                        <div class="font-bold text-xs">Shared Free Time</div>
+                        <div class="text-[10px] font-medium">${formatTime(minutesToTimeStr(gap.start))} - ${formatTime(minutesToTimeStr(gap.end))}</div>
+                    `;
+                    // Smart tooltip update
+                    div.title = `You and ${otherPerson} are both free!`;
+                    
+                    col.appendChild(div);
+                });
+            });
+
+            updateFreeTimeList(sharedGapsList, true);
+        }
+
+        function updateFreeTimeList(gaps, isShared = false) {
+            const tbody = document.getElementById('free-time-body');
+            tbody.innerHTML = '';
+            const dayNames = { 'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday', 'fri': 'Friday' };
+            
+            if (isShared && gaps.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500 italic">No shared free time found this week. 😔</td></tr>`;
+                document.getElementById('free-time-heading').innerHTML = `<span class="text-lg">⏳</span> Shared Free Time`;
+                document.getElementById('free-time-badge').className = "text-xs bg-gold-100 text-gold-900 px-2 py-1 rounded-full border border-gold-200";
+                document.getElementById('free-time-badge').innerText = "Times you both are free";
+                return;
+            }
+
+            if (isShared) {
+                document.getElementById('free-time-heading').innerHTML = `<span class="text-lg">⏳</span> Shared Free Time`;
+                document.getElementById('free-time-badge').className = "text-xs bg-gold-100 text-gold-900 px-2 py-1 rounded-full border border-gold-200";
+                document.getElementById('free-time-badge').innerText = "Times you both are free";
+            } else {
+                document.getElementById('free-time-heading').innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Free Time Slots
+                `;
+                document.getElementById('free-time-badge').className = "text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full";
+                document.getElementById('free-time-badge').innerText = "Between 8:00 AM - 7:00 PM";
+            }
+
+            let lastDay = '';
+            gaps.forEach((gap) => {
+                const duration = gap.end - gap.start;
+                if (duration < 15) return;
+
+                const row = document.createElement('tr');
+                if (isShared) {
+                    row.className = "bg-gold-50/50 border-b border-gold-100 hover:bg-gold-100/50 transition-colors";
+                } else {
+                    row.className = "bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group free-time-row";
+                    row.dataset.day = gap.day;
+                    row.dataset.start = gap.start;
+                    row.dataset.end = gap.end;
+                }
+                
+                const dayLabel = gap.day !== lastDay ? `<span class="font-medium text-gray-900 dark:text-gray-100">${dayNames[gap.day]}</span>` : '';
+                lastDay = gap.day;
+                
+                const showButton = duration >= 20 && !isShared; 
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">${dayLabel}</td>
+                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${isShared ? 'bg-gold-400' : 'bg-emerald-400'}"></span>
+                            ${formatTime(minutesToTimeStr(gap.start))} — ${formatTime(minutesToTimeStr(gap.end))}
+                            <span class="text-xs text-gray-400 ml-2 font-mono">(${formatDuration(duration)})</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        ${showButton ? 
+                            `<button onclick="openStudyMode()" class="opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-3 py-1.5 rounded-full font-medium hover:bg-indigo-100 dark:hover:bg-indigo-800">
+                                Focus Mode
+                            </button>` : ''
+                        }
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
         let timerInterval;
         const TIME_LIMIT = 25 * 60; 
         let timeLeft = TIME_LIMIT;
@@ -417,7 +606,7 @@
         function openStudyMode() {
             const overlay = document.getElementById('study-overlay');
             overlay.classList.remove('hidden');
-            document.body.classList.add('overflow-hidden'); // Hide scrollbar
+            document.body.classList.add('overflow-hidden'); 
             resetTimer(); 
             setTimeout(() => overlay.classList.remove('opacity-0'), 10);
         }
@@ -434,7 +623,7 @@
 
             setTimeout(() => {
                 overlay.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden'); // Restore scrollbar
+                document.body.classList.remove('overflow-hidden'); 
             }, 300);
         }
 
@@ -558,9 +747,7 @@
 
         function calculateFreeTime() {
             const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-            const dayNames = { 'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday', 'fri': 'Friday' };
-            const tbody = document.getElementById('free-time-body');
-            tbody.innerHTML = '';
+            const gapsList = [];
 
             days.forEach(day => {
                 const dayEvents = schedule
@@ -569,55 +756,22 @@
 
                 let currentTime = START_HOUR * 60;
                 const dayEndTime = END_HOUR * 60;
-                let gaps = [];
 
                 dayEvents.forEach(event => {
                     const eventStart = getAbsoluteMinutes(event.start);
                     const eventEnd = getAbsoluteMinutes(event.end);
                     if (eventStart > currentTime) {
-                        gaps.push({ start: currentTime, end: eventStart });
+                        gapsList.push({ day, start: currentTime, end: eventStart });
                     }
                     currentTime = Math.max(currentTime, eventEnd);
                 });
 
                 if (currentTime < dayEndTime) {
-                    gaps.push({ start: currentTime, end: dayEndTime });
+                    gapsList.push({ day, start: currentTime, end: dayEndTime });
                 }
-
-                gaps.forEach((gap, index) => {
-                    if (gap.end - gap.start < 10) return; 
-
-                    const row = document.createElement('tr');
-                    row.className = "bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group free-time-row"; 
-                    row.dataset.day = day;
-                    row.dataset.start = gap.start;
-                    row.dataset.end = gap.end;
-                    
-                    const dayLabel = index === 0 ? `<span class="font-medium text-gray-900 dark:text-gray-100">${dayNames[day]}</span>` : '';
-                    
-                    const duration = gap.end - gap.start;
-                    const showButton = duration >= 20;
-
-                    row.innerHTML = `
-                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">${dayLabel}</td>
-                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                ${formatTime(minutesToTimeStr(gap.start))} — ${formatTime(minutesToTimeStr(gap.end))}
-                                <span class="text-xs text-gray-400 ml-2 font-mono">(${formatDuration(duration)})</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            ${showButton ? 
-                                `<button onclick="openStudyMode()" class="opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-3 py-1.5 rounded-full font-medium hover:bg-indigo-100 dark:hover:bg-indigo-800">
-                                    Focus Mode
-                                </button>` : ''
-                            }
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
             });
+            
+            updateFreeTimeList(gapsList, false);
         }
 
         function updateLiveFeatures() {
@@ -655,6 +809,8 @@
         }
 
         function updateActiveFreeSlot() {
+            if (isComparing) return;
+            
             const now = new Date();
             const currentDayIndex = now.getDay();
             const dayMap = [null, 'mon', 'tue', 'wed', 'thu', 'fri', null];
@@ -702,7 +858,7 @@
             let subMessage = '';
 
             if (!currentDayKey) {
-                message = "Relax! It's the weekend. 😎";
+                message = "It's the weekend, no classes in session!";
                 subMessage = "No classes today.";
             } else {
                 const todayEvents = schedule.filter(e => e.day === currentDayKey).sort((a, b) => getAbsoluteMinutes(a.start) - getAbsoluteMinutes(b.start));
@@ -764,6 +920,8 @@
             }
         }
 
+
+        // Init
         initDarkMode();
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const dateEl = document.getElementById('current-date');
@@ -774,6 +932,7 @@
         renderSchedule();
         calculateFreeTime();
         
+        // Start Loop
         updateLiveFeatures();
         setInterval(updateLiveFeatures, 60000); 
 
