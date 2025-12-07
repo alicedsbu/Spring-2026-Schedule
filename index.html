@@ -50,10 +50,11 @@
 
         .event-card {
             transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+            z-index: 10; /* Base Z-Index */
         }
         .event-card:hover {
             transform: scale(1.02);
-            z-index: 40;
+            z-index: 30; /* Hover Z-Index (Above shared, below headers) */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
@@ -64,7 +65,7 @@
         }
         .shared-gap-card {
             animation: popIn 0.3s ease-out forwards;
-            z-index: 50;
+            z-index: 20; /* Above normal cards, below hover/headers */
         }
 
         @keyframes popIn {
@@ -76,6 +77,7 @@
         #current-time-line {
             pointer-events: none;
             transition: top 0.5s ease-in-out;
+            z-index: 25; /* Above shared cards */
         }
         #current-time-line::before {
             content: '';
@@ -96,8 +98,8 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200 relative">
 
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-30 transition-colors duration-200">
+    <!-- Header (Z-50 to stay on top of everything) -->
+    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200">
         <div>
             <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">Weekly Schedule</h1>
             <p id="current-date" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
@@ -152,16 +154,16 @@
             
             <div class="relative overflow-x-auto">
                 <div class="min-w-[800px] relative flex">
-                    <!-- Time Column -->
-                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-20 transition-colors duration-200">
-                        <div class="h-10 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30"></div> <!-- Header spacer -->
+                    <!-- Time Column (Z-40 to stay above cards) -->
+                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-40 transition-colors duration-200">
+                        <div class="h-10 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40"></div> <!-- Header spacer -->
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
 
                     <!-- Schedule Grid -->
                     <div class="flex-1 relative bg-white dark:bg-gray-800 transition-colors duration-200">
-                        <!-- Days Header -->
-                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-10 shadow-sm transition-colors duration-200">
+                        <!-- Days Header (Z-40 to stay above cards) -->
+                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 shadow-sm transition-colors duration-200">
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-mon">Mon</div>
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-tue">Tue</div>
                             <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-wed">Wed</div>
@@ -171,7 +173,7 @@
 
                         <!-- Days Columns Container -->
                         <div class="grid grid-cols-5 h-[1188px] relative" id="schedule-container">
-                            <!-- Grid Lines -->
+                            <!-- Grid Lines (Z-0) -->
                             <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(11,1fr)] w-full h-full z-0">
                                 <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
                                 <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
@@ -187,7 +189,7 @@
                             </div>
 
                             <!-- Current Time Line -->
-                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-20 hidden"></div>
+                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-25 hidden"></div>
 
                             <!-- Day Columns -->
                             <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-mon"></div>
@@ -230,8 +232,8 @@
 
     </main>
 
-    <!-- STUDY MODE OVERLAY -->
-    <div id="study-overlay" class="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
+    <!-- STUDY MODE OVERLAY (Z-60 to be above header) -->
+    <div id="study-overlay" class="fixed inset-0 z-60 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
         <!-- Background Pulse Effect -->
         <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
         
@@ -323,21 +325,25 @@
             ],
             'daniel': [
                 // Monday
-                { day: 'mon', title: 'CSE 101 - 01', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102' },
-                { day: 'mon', title: 'CSE 101 - L01', type: 'Laboratory', start: '14:00', end: '15:20', loc: 'Comp Sci 2114' },
+                { day: 'mon', title: 'CSE 101 - 01 (Tentative)', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102' },
+                { day: 'mon', title: 'SOC 201 - 03', type: 'Lecture', start: '11:00', end: '12:20', loc: 'Location TBD' },
+                { day: 'mon', title: 'CSE 101 - L01 (Tentative)', type: 'Laboratory', start: '14:00', end: '15:20', loc: 'Comp Sci 2114' },
+                { day: 'mon', title: 'AMS 104 - 01', type: 'Lecture', start: '17:00', end: '18:20', loc: 'Frey Hall 100' },
                 
                 // Tuesday
                 { day: 'tue', title: 'PSY 201 - 01', type: 'Lecture', start: '09:30', end: '10:25', loc: 'Javits Center 103' },
-                { day: 'tue', title: 'CWL 190 - S02', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Harriman Hall 116' },
+                { day: 'tue', title: 'PHI 104 - 01', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Location TBD' },
                 { day: 'tue', title: 'CHI 120 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Physics P122' },
 
                 // Wednesday
-                { day: 'wed', title: 'CSE 101 - 01', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102' },
-                { day: 'wed', title: 'CSE 101 - L01', type: 'Laboratory', start: '14:00', end: '15:20', loc: 'Comp Sci 2114' },
+                { day: 'wed', title: 'CSE 101 - 01 (Tentative)', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102' },
+                { day: 'wed', title: 'SOC 201 - 03', type: 'Lecture', start: '11:00', end: '12:20', loc: 'Location TBD' },
+                { day: 'wed', title: 'CSE 101 - L01 (Tentative)', type: 'Laboratory', start: '14:00', end: '15:20', loc: 'Comp Sci 2114' },
+                { day: 'wed', title: 'AMS 104 - 01', type: 'Lecture', start: '17:00', end: '18:20', loc: 'Frey Hall 100' },
 
                 // Thursday
                 { day: 'thu', title: 'PSY 201 - 01', type: 'Lecture', start: '09:30', end: '10:25', loc: 'Javits Center 103' },
-                { day: 'thu', title: 'CWL 190 - S02', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Harriman Hall 116' },
+                { day: 'thu', title: 'PHI 104 - 01', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Location TBD' },
                 { day: 'thu', title: 'CHI 120 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Physics P122' },
                 { day: 'thu', title: 'CHI 120 - R02', type: 'Recitation', start: '17:00', end: '17:55', loc: 'Physics P122' },
 
@@ -363,7 +369,6 @@
             'PHI 104': { light: 'bg-teal-100 border-teal-300 text-teal-900 hover:bg-teal-200', dark: 'dark:bg-teal-900/60 dark:border-teal-700 dark:text-teal-100 dark:hover:bg-teal-800/60' },
             'PSY 201': { light: 'bg-pink-100 border-pink-300 text-pink-900 hover:bg-pink-200', dark: 'dark:bg-pink-900/60 dark:border-pink-700 dark:text-pink-100 dark:hover:bg-pink-800/60' },
             'CHI 120': { light: 'bg-fuchsia-100 border-fuchsia-300 text-fuchsia-900 hover:bg-fuchsia-200', dark: 'dark:bg-fuchsia-900/60 dark:border-fuchsia-700 dark:text-fuchsia-100 dark:hover:bg-fuchsia-800/60' },
-            'CWL 190': { light: 'bg-lime-100 border-lime-300 text-lime-900 hover:bg-lime-200', dark: 'dark:bg-lime-900/60 dark:border-lime-700 dark:text-lime-100 dark:hover:bg-lime-800/60' },
             
             // Fallback
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
