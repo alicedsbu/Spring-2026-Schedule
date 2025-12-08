@@ -157,7 +157,8 @@
                 <div class="min-w-[800px] relative flex">
                     <!-- Time Column (Z-40) -->
                     <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-40 transition-colors duration-200">
-                        <div class="h-10 bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40"></div> <!-- Header spacer -->
+                        <!-- Removed border-b here to prevent line through 8 AM -->
+                        <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40"></div> 
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
 
@@ -233,7 +234,7 @@
 
     </main>
 
-    <!-- STUDY MODE OVERLAY (Fixed z-index to z-[100] to cover header) -->
+    <!-- STUDY MODE OVERLAY (z-[100] to cover everything) -->
     <div id="study-overlay" class="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
         <!-- Background Pulse Effect -->
         <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
@@ -696,9 +697,12 @@
             timeContainer.innerHTML = ''; 
             for (let h = START_HOUR; h < END_HOUR; h++) {
                 const label = document.createElement('div');
-                const marginTop = h === START_HOUR ? '-mt-0' : '-mt-2';
+                const marginTop = '-mt-2';
                 
-                label.className = `absolute w-full text-right pr-2 text-xs text-gray-400 font-medium ${marginTop}`;
+                // Add z-50 to the start hour (8 AM) so it floats over the corner spacer
+                const zIndex = h === START_HOUR ? 'z-50' : 'z-auto';
+                
+                label.className = `absolute w-full text-right pr-2 text-xs text-gray-400 font-medium ${marginTop} ${zIndex}`;
                 const topPercent = ((h - START_HOUR) * 60 / TOTAL_MINUTES) * 100;
                 label.style.top = `${topPercent}%`;
                 
