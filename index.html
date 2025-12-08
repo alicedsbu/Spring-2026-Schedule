@@ -233,8 +233,8 @@
 
     </main>
 
-    <!-- STUDY MODE OVERLAY -->
-    <div id="study-overlay" class="fixed inset-0 z-60 bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
+    <!-- STUDY MODE OVERLAY (Fixed z-index to z-[100] to cover header) -->
+    <div id="study-overlay" class="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
         <!-- Background Pulse Effect -->
         <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
         
