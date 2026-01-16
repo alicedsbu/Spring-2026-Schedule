@@ -364,6 +364,25 @@
     </div>
 
     <script>
+        // --- SECURITY / ROUTING CHECK ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('student') === 'daniel') {
+            document.title = "404 - Schedule Not Found";
+            document.body.innerHTML = `
+                <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-200">
+                    <h1 class="text-9xl font-black text-gray-200 dark:text-gray-800 select-none">404</h1>
+                    <div class="absolute text-center space-y-2">
+                        <p class="text-2xl font-bold">Schedule Not Found</p>
+                        <p class="text-gray-500 dark:text-gray-400">The requested user data does not exist.</p>
+                        <a href="?" class="inline-block mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-medium transition-colors shadow-lg shadow-indigo-500/20">
+                            Return Home
+                        </a>
+                    </div>
+                </div>
+            `;
+            throw new Error("Access Denied: User 'daniel' does not exist."); // Stops the rest of the script
+        }
+
         // Configuration
         const START_HOUR = 8; 
         const END_HOUR = 19; 
@@ -837,7 +856,7 @@
                     gapsList.push({ day, start: currentTime, end: dayEndTime });
                 }
             });
-            updateFreeTimeList(gapsList, false);
+            updateFreeTimeList(gapsList);
         }
 
         function updateLiveFeatures() {
