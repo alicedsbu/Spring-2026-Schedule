@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weekly Timetable</title>
+    <title>My Spring Schedule</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -58,21 +58,6 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        /* Comparison Mode Styles */
-        .comparing .event-card {
-            opacity: 0.15; 
-            pointer-events: none;
-        }
-        .shared-gap-card {
-            animation: popIn 0.3s ease-out forwards;
-            z-index: 20; /* Layer 20: Above normal cards, but below hover (30) and headers (40) */
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
         /* Current Time Indicator */
         #current-time-line {
             pointer-events: none;
@@ -114,7 +99,7 @@
     <!-- Header (Z-50: Highest priority) -->
     <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200">
         <div>
-            <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">Weekly Schedule</h1>
+            <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">My Spring Schedule</h1>
             <p id="current-date" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
             <p id="daily-course-list" class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">Loading classes...</p>
         </div>
@@ -125,11 +110,6 @@
                 <!-- Injected by JS -->
             </div>
             
-            <!-- Compare Button -->
-            <button onclick="toggleCompareMode()" id="compare-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Find Shared Free Time">
-                <span class="text-lg">⏳</span>
-            </button>
-
             <!-- Dark Mode Toggle -->
             <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -389,80 +369,41 @@
         const END_HOUR = 19; 
         const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
         
-        // --- 1. MULTI-USER SETUP ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentUser = urlParams.get('student') ? urlParams.get('student').toLowerCase() : 'alice';
-
-        const userNames = {
-            'alice': "Alice",
-            'daniel': "Daniel"
-        };
-        const displayName = userNames[currentUser] || "Student";
+        // --- 1. SINGLE-USER SETUP ---
+        // Removed the previous URL parsing logic.
         
-        document.title = `${displayName}'s Weekly Timetable`;
-        document.getElementById('page-title').innerText = `${displayName}'s Spring Schedule`;
-
-        // --- 2. SCHEDULE DATASETS (Enriched with Exam Arrays) ---
-        // You can now list as many exams as you want in the 'exams' array.
+        // --- 2. SCHEDULE DATASET (Cleaned for Alice only) ---
         // Format: { name: 'Label', date: 'YYYY-MM-DD' }
-        const schedules = {
-            'alice': [
-                { 
-                    day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', 
-                    prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec',
-                    exams: [
-                        { name: 'Midterm 1', date: '2025-02-25' },
-                        { name: 'Midterm 2', date: '2025-04-05' },
-                        { name: 'Final', date: '2025-05-14' }
-                    ],
-                    syllabusUrl: '#'
-                },
-                { 
-                    day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', 
-                    prof: 'Isaac Carrico', fullTitle: 'Molecular Science II',
-                    exams: [
-                         { name: 'Midterm', date: '2025-03-15' },
-                         { name: 'Final', date: '2025-05-12' }
-                    ],
-                    syllabusUrl: '#'
-                },
-                { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
-                { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [], syllabusUrl: '#' },
-                { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
-                { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{name: 'Midterm', date: '2025-03-15'}, {name: 'Final', date: '2025-05-12'}], syllabusUrl: '#' },
-                { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
-                { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: '#' },
-                { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
-                { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{name: 'Midterm', date: '2025-03-15'}, {name: 'Final', date: '2025-05-12'}], syllabusUrl: '#' },
-                { day: 'fri', title: 'SBU 102 - S143', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Soc & Behav Sci N703', prof: 'Jason Rose', fullTitle: 'Undergraduate College Seminar', exams: [], syllabusUrl: '#' },
-            ],
-            'daniel': [
-                // Monday
-                { day: 'mon', title: 'CSE 101 - 01', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102', prof: 'Kevin McDonnell', fullTitle: 'Intro to Programming', exams: [{name: 'Midterm', date: '2025-03-10'}, {name: 'Final', date: '2025-05-15'}], syllabusUrl: '#' },
-                { day: 'mon', title: 'CSE 101 - L02', type: 'Laboratory', start: '15:30', end: '16:50', loc: 'Comp Sci 2114', prof: 'Kevin McDonnell', fullTitle: 'Intro to Programming (Lab)', exams: [], syllabusUrl: '#' },
-                
-                // Tuesday
-                { day: 'tue', title: 'PSY 201 - 01', type: 'Lecture', start: '09:30', end: '10:25', loc: 'Javits Center 103', prof: 'Staff', fullTitle: 'Intro to Psychology', exams: [{name: 'Midterm', date: '2025-03-18'}, {name: 'Final', date: '2025-05-20'}], syllabusUrl: '#' },
-                { day: 'tue', title: 'CWL 190 - S02', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Harriman Hall 116', prof: 'D. Walton, J. Frigano', fullTitle: 'Intro to Creative Writing', exams: [], syllabusUrl: '#' },
-                { day: 'tue', title: 'CHI 120 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Physics P122', prof: 'Xiao Ha', fullTitle: 'Elementary Chinese I', exams: [{name: 'Oral Exam', date: '2025-04-20'}, {name: 'Final', date: '2025-05-13'}], syllabusUrl: '#' },
-
-                // Wednesday
-                { day: 'wed', title: 'CSE 101 - 01', type: 'Lecture', start: '09:30', end: '10:50', loc: 'Frey Hall 102', prof: 'Kevin McDonnell', fullTitle: 'Intro to Programming', exams: [{name: 'Midterm', date: '2025-03-10'}, {name: 'Final', date: '2025-05-15'}], syllabusUrl: '#' },
-                { day: 'wed', title: 'CSE 101 - L02', type: 'Laboratory', start: '15:30', end: '16:50', loc: 'Comp Sci 2114', prof: 'Kevin McDonnell', fullTitle: 'Intro to Programming (Lab)', exams: [], syllabusUrl: '#' },
-
-                // Thursday
-                { day: 'thu', title: 'PSY 201 - 01', type: 'Lecture', start: '09:30', end: '10:25', loc: 'Javits Center 103', prof: 'Staff', fullTitle: 'Intro to Psychology', exams: [{name: 'Midterm', date: '2025-03-18'}, {name: 'Final', date: '2025-05-20'}], syllabusUrl: '#' },
-                { day: 'thu', title: 'CWL 190 - S02', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Harriman Hall 116', prof: 'D. Walton, J. Frigano', fullTitle: 'Intro to Creative Writing', exams: [], syllabusUrl: '#' },
-                { day: 'thu', title: 'CHI 120 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Physics P122', prof: 'Xiao Ha', fullTitle: 'Elementary Chinese I', exams: [{name: 'Oral Exam', date: '2025-04-20'}, {name: 'Final', date: '2025-05-13'}], syllabusUrl: '#' },
-                { day: 'thu', title: 'CHI 120 - R02', type: 'Recitation', start: '17:00', end: '17:55', loc: 'Physics P122', prof: 'Xiao Ha', fullTitle: 'Elementary Chinese I (Rec)', exams: [], syllabusUrl: '#' },
-
-                // Friday
-                { day: 'fri', title: 'PSY 201 - L01', type: 'Laboratory', start: '09:30', end: '10:25', loc: 'Javits Center 101', prof: 'Cameron Jones', fullTitle: 'Intro to Psychology (Lab)', exams: [], syllabusUrl: '#' },
-                { day: 'fri', title: 'SBU 102 - S102', type: 'Seminar', start: '12:30', end: '13:50', loc: 'HSC 2-272AB', prof: 'Srinivas Pentyala', fullTitle: 'Undergraduate College Seminar', exams: [], syllabusUrl: '#' },
-            ]
-        };
-
-        const schedule = schedules[currentUser] || schedules['alice'];
+        const schedule = [
+            { 
+                day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', 
+                prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec',
+                exams: [
+                    { name: 'Midterm 1', date: '2025-02-25' },
+                    { name: 'Midterm 2', date: '2025-04-05' },
+                    { name: 'Final', date: '2025-05-14' }
+                ],
+                syllabusUrl: '#'
+            },
+            { 
+                day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', 
+                prof: 'Isaac Carrico', fullTitle: 'Molecular Science II',
+                exams: [
+                        { name: 'Midterm', date: '2025-03-15' },
+                        { name: 'Final', date: '2025-05-12' }
+                ],
+                syllabusUrl: '#'
+            },
+            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
+            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [], syllabusUrl: '#' },
+            { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{name: 'Midterm', date: '2025-03-15'}, {name: 'Final', date: '2025-05-12'}], syllabusUrl: '#' },
+            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
+            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: '#' },
+            { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{name: 'Midterm', date: '2025-03-15'}, {name: 'Final', date: '2025-05-12'}], syllabusUrl: '#' },
+            { day: 'fri', title: 'SBU 102 - S143', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Soc & Behav Sci N703', prof: 'Jason Rose', fullTitle: 'Undergraduate College Seminar', exams: [], syllabusUrl: '#' },
+        ];
 
         // Helper for raw colors (to use in modal header inline styles)
         const rawColors = {
@@ -471,12 +412,6 @@
             'AMS 161': '#e11d48', // Rose 600
             'WRT 102': '#d97706', // Amber 600
             'SBU 102': '#9333ea', // Purple 600
-            'CSE 101': '#0891b2', // Cyan 600
-            'SOC 201': '#ea580c', // Orange 600
-            'PHI 104': '#0d9488', // Teal 600
-            'PSY 201': '#db2777', // Pink 600
-            'CHI 120': '#c026d3', // Fuchsia 600
-            'CWL 190': '#65a30d', // Lime 600
             'default': '#4b5563'  // Gray 600
         };
 
@@ -487,14 +422,6 @@
             'AMS 161': { light: 'bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200', dark: 'dark:bg-rose-900/60 dark:border-rose-700 dark:text-rose-100 dark:hover:bg-rose-800/60' },
             'WRT 102': { light: 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200', dark: 'dark:bg-amber-900/60 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-800/60' },
             'SBU 102': { light: 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200', dark: 'dark:bg-purple-900/60 dark:border-purple-700 dark:text-purple-100 dark:hover:bg-purple-800/60' },
-            
-            // Daniel's
-            'CSE 101': { light: 'bg-cyan-100 border-cyan-300 text-cyan-900 hover:bg-cyan-200', dark: 'dark:bg-cyan-900/60 dark:border-cyan-700 dark:text-cyan-100 dark:hover:bg-cyan-800/60' },
-            'SOC 201': { light: 'bg-orange-100 border-orange-300 text-orange-900 hover:bg-orange-200', dark: 'dark:bg-orange-900/60 dark:border-orange-700 dark:text-orange-100 dark:hover:bg-orange-800/60' },
-            'PHI 104': { light: 'bg-teal-100 border-teal-300 text-teal-900 hover:bg-teal-200', dark: 'dark:bg-teal-900/60 dark:border-teal-700 dark:text-teal-100 dark:hover:bg-teal-800/60' },
-            'PSY 201': { light: 'bg-pink-100 border-pink-300 text-pink-900 hover:bg-pink-200', dark: 'dark:bg-pink-900/60 dark:border-pink-700 dark:text-pink-100 dark:hover:bg-pink-800/60' },
-            'CHI 120': { light: 'bg-fuchsia-100 border-fuchsia-300 text-fuchsia-900 hover:bg-fuchsia-200', dark: 'dark:bg-fuchsia-900/60 dark:border-fuchsia-700 dark:text-fuchsia-100 dark:hover:bg-fuchsia-800/60' },
-            'CWL 190': { light: 'bg-lime-100 border-lime-300 text-lime-900 hover:bg-lime-200', dark: 'dark:bg-lime-900/60 dark:border-lime-700 dark:text-lime-100 dark:hover:bg-lime-800/60' },
             
             // Fallback
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
@@ -562,123 +489,19 @@
             }
         }
 
-        let isComparing = false;
-
-        function toggleCompareMode() {
-            isComparing = !isComparing;
-            const container = document.querySelector('main'); 
-            if (isComparing) {
-                container.classList.add('comparing');
-                const btn = document.getElementById('compare-btn');
-                btn.classList.add('bg-indigo-100', 'text-indigo-600', 'ring-2', 'ring-indigo-500');
-                renderSharedGaps();
-            } else {
-                container.classList.remove('comparing');
-                const btn = document.getElementById('compare-btn');
-                btn.classList.remove('bg-indigo-100', 'text-indigo-600', 'ring-2', 'ring-indigo-500');
-                document.querySelectorAll('.shared-gap-card').forEach(el => el.remove());
-                calculateFreeTime();
-            }
-        }
-
-        function renderSharedGaps() {
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-            const sharedGapsList = [];
-
-            days.forEach(day => {
-                const eventsA = schedules['alice'].filter(e => e.day === day).map(e => ({ start: getAbsoluteMinutes(e.start), end: getAbsoluteMinutes(e.end) }));
-                const eventsD = schedules['daniel'].filter(e => e.day === day).map(e => ({ start: getAbsoluteMinutes(e.start), end: getAbsoluteMinutes(e.end) }));
-                
-                let allBusy = [...eventsA, ...eventsD].sort((a, b) => a.start - b.start);
-                
-                let mergedBusy = [];
-                if (allBusy.length > 0) {
-                    let current = allBusy[0];
-                    for (let i = 1; i < allBusy.length; i++) {
-                        if (allBusy[i].start < current.end) {
-                            current.end = Math.max(current.end, allBusy[i].end);
-                        } else {
-                            mergedBusy.push(current);
-                            current = allBusy[i];
-                        }
-                    }
-                    mergedBusy.push(current);
-                }
-
-                let currentTime = START_HOUR * 60;
-                const dayEndTime = END_HOUR * 60;
-
-                mergedBusy.forEach(busy => {
-                    if (busy.start > currentTime) {
-                        const gap = { day, start: currentTime, end: busy.start };
-                        if (gap.end - gap.start >= 15) {
-                            sharedGapsList.push(gap);
-                            renderGapCard(day, gap);
-                        }
-                    }
-                    currentTime = Math.max(currentTime, busy.end);
-                });
-                
-                if (currentTime < dayEndTime) {
-                     const gap = { day, start: currentTime, end: dayEndTime };
-                     if (gap.end - gap.start >= 15) {
-                        sharedGapsList.push(gap);
-                        renderGapCard(day, gap);
-                     }
-                }
-            });
-
-            updateFreeTimeList(sharedGapsList, true);
-        }
-
-        function renderGapCard(day, gap) {
-            const col = document.getElementById(`col-${day}`);
-            const startMinFrom8 = gap.start - (START_HOUR * 60);
-            const duration = gap.end - gap.start;
-            const topPercent = (startMinFrom8 / TOTAL_MINUTES) * 100;
-            const heightPercent = (duration / TOTAL_MINUTES) * 100;
-
-            const div = document.createElement('div');
-            div.className = "absolute inset-x-2 rounded p-2 flex flex-col justify-center items-center text-center cursor-pointer shared-gap-card bg-gold-200/90 border-l-4 border-gold-400 text-gold-900 shadow-lg hover:bg-gold-300";
-            div.style.top = `${topPercent}%`;
-            div.style.height = `${heightPercent}%`;
-            
-            const otherPerson = currentUser === 'alice' ? 'Daniel' : 'Alice';
-            div.innerHTML = `
-                <div class="font-bold text-xs">Shared Free Time</div>
-                <div class="text-[10px] font-medium">${formatTime(minutesToTimeStr(gap.start))} - ${formatTime(minutesToTimeStr(gap.end))}</div>
-            `;
-            div.title = `You and ${otherPerson} are both free!`;
-            col.appendChild(div);
-        }
-
-        function updateFreeTimeList(gaps, isShared = false) {
+        function updateFreeTimeList(gaps) {
             const tbody = document.getElementById('free-time-body');
             tbody.innerHTML = '';
             const dayNames = { 'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday', 'fri': 'Friday' };
             
-            if (isShared && gaps.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500 italic">No shared free time found this week. 😔</td></tr>`;
-                document.getElementById('free-time-heading').innerHTML = `<span class="text-lg">⏳</span> Shared Free Time`;
-                document.getElementById('free-time-badge').className = "text-xs bg-gold-100 text-gold-900 px-2 py-1 rounded-full border border-gold-200";
-                document.getElementById('free-time-badge').innerText = "Times you both are free";
-                return;
-            }
-
-            if (isShared) {
-                document.getElementById('free-time-heading').innerHTML = `<span class="text-lg">⏳</span> Shared Free Time`;
-                document.getElementById('free-time-badge').className = "text-xs bg-gold-100 text-gold-900 px-2 py-1 rounded-full border border-gold-200";
-                document.getElementById('free-time-badge').innerText = "Times you both are free";
-            } else {
-                document.getElementById('free-time-heading').innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Free Time Slots
-                `;
-                document.getElementById('free-time-badge').className = "text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full";
-                document.getElementById('free-time-badge').innerText = "Between 8:00 AM - 7:00 PM";
-            }
+            document.getElementById('free-time-heading').innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Free Time Slots
+            `;
+            document.getElementById('free-time-badge').className = "text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full";
+            document.getElementById('free-time-badge').innerText = "Between 8:00 AM - 7:00 PM";
 
             let lastDay = '';
             gaps.forEach((gap) => {
@@ -686,25 +509,21 @@
                 if (duration < 15) return;
 
                 const row = document.createElement('tr');
-                if (isShared) {
-                    row.className = "bg-gold-50/50 border-b border-gold-100 hover:bg-gold-100/50 transition-colors";
-                } else {
-                    row.className = "bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group free-time-row";
-                    row.dataset.day = gap.day;
-                    row.dataset.start = gap.start;
-                    row.dataset.end = gap.end;
-                }
+                row.className = "bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group free-time-row";
+                row.dataset.day = gap.day;
+                row.dataset.start = gap.start;
+                row.dataset.end = gap.end;
                 
                 const dayLabel = gap.day !== lastDay ? `<span class="font-medium text-gray-900 dark:text-gray-100">${dayNames[gap.day]}</span>` : '';
                 lastDay = gap.day;
                 
-                const showButton = duration >= 20 && !isShared; 
+                const showButton = duration >= 20; 
 
                 row.innerHTML = `
                     <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">${dayLabel}</td>
                     <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${isShared ? 'bg-gold-400' : 'bg-emerald-400'}"></span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                             ${formatTime(minutesToTimeStr(gap.start))} — ${formatTime(minutesToTimeStr(gap.end))}
                             <span class="text-xs text-gray-400 ml-2 font-mono">(${formatDuration(duration)})</span>
                         </div>
@@ -1056,8 +875,6 @@
         }
 
         function updateActiveFreeSlot() {
-            if (isComparing) return;
-            
             const now = new Date();
             const currentDayIndex = now.getDay();
             const dayMap = [null, 'mon', 'tue', 'wed', 'thu', 'fri', null];
