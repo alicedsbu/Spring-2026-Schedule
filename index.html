@@ -308,6 +308,96 @@
                 window.closeAssignmentModal(null, true);
             }
         }
+
+        // --- COURSE MODAL LOGIC (NOW ATTACHED TO WINDOW) ---
+        window.openCourseModal = (eventDataStr) => {
+            const data = JSON.parse(decodeURIComponent(eventDataStr));
+            const modal = document.getElementById('course-modal-overlay');
+            
+            const codeKey = data.title.substring(0, 7);
+            const rawHeaderColor = rawColors[codeKey] || rawColors['Other'];
+            
+            document.getElementById('modal-header').style.backgroundColor = rawHeaderColor;
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-subtitle').innerText = data.fullTitle || 'Course Details';
+            document.getElementById('modal-type').innerText = data.type;
+            document.getElementById('modal-prof').innerText = data.prof || 'TBA';
+            document.getElementById('modal-loc').innerText = data.loc;
+            
+            const mapQuery = encodeURIComponent(`${data.loc} Stony Brook University`);
+            document.getElementById('modal-loc-link').href = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+            
+            const syllabusBtn = document.getElementById('modal-syllabus-link');
+            if (data.syllabusUrl && data.syllabusUrl !== '#') {
+                syllabusBtn.href = data.syllabusUrl;
+                syllabusBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                syllabusBtn.innerText = "View Syllabus";
+            } else {
+                syllabusBtn.href = "#";
+                syllabusBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                syllabusBtn.innerText = "No Syllabus Link";
+            }
+
+            const examGrid = document.getElementById('modal-exam-grid');
+            examGrid.innerHTML = ''; 
+
+            if (data.exams && data.exams.length > 0) {
+                data.exams.forEach(exam => {
+                    const daysLeft = getDaysUntil(exam.date);
+                    
+                    let countText = "--";
+                    let countClass = "text-xl font-bold text-gray-400";
+                    let dateText = "TBA";
+
+                    if (daysLeft !== null) {
+                        if (daysLeft < 0) {
+                            countText = "Done";
+                            countClass = "text-xl font-bold text-gray-400";
+                        } else {
+                            countText = daysLeft;
+                            countClass = "text-xl font-bold text-indigo-600 dark:text-indigo-400";
+                        }
+                        dateText = new Date(exam.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center";
+                    card.innerHTML = `
+                        <p class="text-xs text-gray-500 uppercase truncate">${exam.name}</p>
+                        <p class="${countClass}">${countText}</p>
+                        <p class="text-[10px] text-gray-400">Days Left</p>
+                        <p class="text-[10px] text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">${dateText}</p>
+                    `;
+                    examGrid.appendChild(card);
+                });
+                if (data.exams.length % 2 !== 0 && data.exams.length > 1) {
+                    examGrid.lastElementChild.classList.add('col-span-2'); 
+                }
+            } else {
+                examGrid.innerHTML = `<div class="col-span-2 text-center text-sm text-gray-400 italic py-2">No exams listed for this course.</div>`;
+            }
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('modal-open');
+                modal.classList.remove('modal-closed');
+            }, 10);
+        }
+
+        window.closeCourseModal = (e) => {
+            if (e.target.id === 'course-modal-overlay' || e.currentTarget.tagName === 'BUTTON') {
+                const modal = document.getElementById('course-modal-overlay');
+                modal.classList.remove('modal-open');
+                modal.classList.add('modal-closed');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                }, 300);
+            }
+        }
     </script>
 
     <script>
@@ -545,11 +635,12 @@
     </div>
 
     <!-- EXISTING COURSE DETAILS MODAL -->
-    <div id="course-modal-overlay" class="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0" onclick="closeCourseModal(event)">
-        <div id="course-modal-content" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform scale-95 opacity-0 transition-all">
+    <div id="course-modal-overlay" class="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0" onclick="window.closeCourseModal(event)">
+        <!-- ADDED "modal-content" CLASS HERE -->
+        <div id="course-modal-content" class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform scale-95 opacity-0 transition-all">
             <!-- Modal Header (Dynamic Color) -->
             <div id="modal-header" class="p-6 text-white relative">
-                <button onclick="closeCourseModal(event)" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -664,7 +755,12 @@
             { 
                 day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', 
                 prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec',
-                exams: [ { name: 'Midterm 1', date: '2025-02-25' }, { name: 'Midterm 2', date: '2025-04-05' }, { name: 'Final', date: '2025-05-14' } ],
+                // 👇 EDIT THESE DATES TO START YOUR COUNTDOWNS 👇
+                exams: [ 
+                    { name: 'Midterm 1', date: '2025-02-25' }, 
+                    { name: 'Midterm 2', date: '2025-04-05' }, 
+                    { name: 'Final', date: '2025-05-14' } 
+                ],
                 syllabusUrl: '#'
             },
             { 
@@ -1027,7 +1123,7 @@
                         const colorSet = colors[codeKey] || colors['default'];
                         
                         card.className = `rounded-lg p-3 border-l-4 ${colorSet.light} ${colorSet.dark} flex justify-between items-center cursor-pointer transition-transform hover:scale-[1.01]`;
-                        card.onclick = () => openCourseModal(encodeURIComponent(JSON.stringify(event)));
+                        card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
                         
                         card.innerHTML = `
                             <div>
@@ -1052,16 +1148,42 @@
                 const card = document.createElement('div');
                 const codeKey = event.title.substring(0, 7);
                 const colorSet = colors[codeKey] || colors['default'];
-                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark}`;
+                
+                const colorClass = `${colorSet.light} ${colorSet.dark}`;
+
+                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorClass}`;
                 card.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
                 card.style.height = `${heightPercent}%`;
-                card.onclick = () => openCourseModal(encodeURIComponent(JSON.stringify(event)));
+                card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
                 
+                // Logic to find next exam
+                let examBadge = '';
+                if (event.exams) {
+                     // Sort exams by date to find the soonest one in the future
+                     const upcomingExams = event.exams
+                        .map(e => ({ ...e, days: getDaysUntil(e.date) }))
+                        .filter(e => e.days !== null && e.days >= 0)
+                        .sort((a, b) => a.days - b.days);
+
+                     if (upcomingExams.length > 0) {
+                         const next = upcomingExams[0];
+                         const isUrgent = next.days <= 7;
+                         const badgeColor = isUrgent ? 'bg-red-500 text-white' : 'bg-white/50 dark:bg-black/30 text-gray-800 dark:text-gray-200';
+                         // Only show if it fits? The cards are small.
+                         // Maybe just an icon and number? "📝 5d"
+                         examBadge = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColor} inline-block truncate w-full">
+                            ${isUrgent ? '🔥 ' : '📅 '}${next.name}: ${next.days}d
+                         </div>`;
+                     }
+                }
+
                 card.innerHTML = `
                     <div class="font-bold leading-tight mb-0.5 text-sm truncate pointer-events-none">${event.title}</div>
                     <div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[11px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div>
+                    ${examBadge}
                     <div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>
                 `;
+                
                 container.appendChild(card);
             });
         }
