@@ -23,17 +23,27 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; }
+        
         .event-card { transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; z-index: 10; }
         .event-card:hover { transform: scale(1.02); z-index: 30; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        
         #current-time-line { pointer-events: none; transition: top 0.5s ease-in-out; z-index: 25; }
         #current-time-line::before { content: ''; position: absolute; left: -6px; top: -5px; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; }
-        #study-overlay, #course-modal-overlay, #assignment-modal-overlay, #day-view-overlay { transition: opacity 0.2s ease-in-out; }
+        
+        #study-overlay, #course-modal-overlay, #assignment-modal-overlay, #day-view-overlay, #delete-modal-overlay { transition: opacity 0.2s ease-in-out; }
         .modal-open .modal-content { transform: scale(1); opacity: 1; }
         .modal-closed .modal-content { transform: scale(0.95); opacity: 0; }
+        
+        /* Circular Timer CSS */
+        .timer-circle { transition: stroke-dashoffset 1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        /* Hide number input arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -41,23 +51,27 @@
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200 relative">
 
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200">
+    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200 h-[73px]">
         <div>
             <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">My Spring Schedule</h1>
-            <p id="current-date" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
-            <p id="daily-course-list" class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">Loading classes...</p>
+            <div class="flex items-center gap-2 mt-0.5 text-sm">
+                <p id="current-date" class="font-medium text-indigo-600 dark:text-indigo-400"></p>
+                <span class="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
+                <p id="today-classes" class="text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-md hidden sm:block">Loading...</p>
+            </div>
+            <p id="auth-status" class="text-xs text-gray-400 hidden">Loading calendar...</p>
         </div>
         <div class="flex items-center gap-4">
-            <div id="up-next-desktop" class="hidden md:block text-right mr-4"></div>
-            <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onclick="window.toggleStudyMode()" class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span class="font-medium text-sm hidden sm:inline">Focus Mode</span>
+            </button>
+            <button onclick="window.toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                 <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
             </button>
         </div>
     </header>
-
-    <!-- Up Next Mobile Banner -->
-    <div id="up-next-mobile" class="md:hidden bg-indigo-600 dark:bg-indigo-900 text-white px-4 py-3 shadow-md flex items-center justify-between"></div>
 
     <!-- Main Content -->
     <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8">
@@ -69,22 +83,22 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     Weekly Overview
                 </h2>
-                <div id="live-indicator-status" class="text-xs font-medium text-red-500 hidden items-center gap-1 animate-pulse"><span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</div>
+                <div id="live-indicator-status" class="text-xs font-medium text-red-500 flex items-center gap-1 animate-pulse"><span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</div>
             </div>
             
             <div class="relative overflow-x-auto">
                 <div class="min-w-[800px] relative flex">
                     <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-40 transition-colors duration-200">
-                        <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40"></div> 
+                        <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 border-b border-gray-100 dark:border-gray-700"></div> 
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
                     <div class="flex-1 relative bg-white dark:bg-gray-800 transition-colors duration-200">
-                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 shadow-sm transition-colors duration-200">
-                            <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-mon">Mon</div>
-                            <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-tue">Tue</div>
-                            <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-wed">Wed</div>
-                            <div class="text-center py-2 border-r border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-thu">Thu</div>
-                            <div class="text-center py-2 font-semibold text-gray-700 dark:text-gray-300 text-sm" id="header-fri">Fri</div>
+                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 shadow-sm transition-colors duration-200 h-10 items-center">
+                            <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Mon</div>
+                            <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Tue</div>
+                            <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Wed</div>
+                            <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Thu</div>
+                            <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Fri</div>
                         </div>
                         <div class="grid grid-cols-5 h-[1188px] relative" id="schedule-container">
                             <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(11,1fr)] w-full h-full z-0">
@@ -117,7 +131,7 @@
                         <button onclick="window.changeMonth(-1)" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                         </button>
-                        <span id="calendar-month-year" class="px-3 text-sm font-bold text-gray-700 dark:text-gray-200 min-w-[140px] text-center">February 2025</span>
+                        <span id="calendar-month-year" class="px-3 text-sm font-bold text-gray-700 dark:text-gray-200 min-w-[140px] text-center">Loading...</span>
                         <button onclick="window.changeMonth(1)" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </button>
@@ -137,34 +151,14 @@
             </div>
         </div>
 
-        <!-- Free Time Table -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
-            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center">
-                <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2" id="free-time-heading"></h2>
-                <span id="free-time-badge" class="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-1 rounded-full">Between 8:00 AM - 7:00 PM</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
-                    <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 w-32">Day</th>
-                            <th scope="col" class="px-6 py-3">Free Time Interval</th>
-                            <th scope="col" class="px-6 py-3 w-32 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="free-time-body"></tbody>
-                </table>
-            </div>
-        </div>
-
     </main>
 
     <!-- DAY VIEW MODAL -->
-    <div id="day-view-overlay" class="fixed inset-0 z-[130] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0" onclick="window.closeDayView()">
+    <div id="day-view-overlay" class="fixed inset-0 z-[130] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeDayView()">
         <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform translate-y-4 opacity-0 transition-all p-0 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-850">
                 <div>
-                    <h3 id="day-view-date" class="text-xl font-bold text-gray-900 dark:text-white">January 1st</h3>
+                    <h3 id="day-view-date" class="text-xl font-bold text-gray-900 dark:text-white">Date</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Tasks Timeline</p>
                 </div>
                 <button onclick="window.closeDayView()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -176,10 +170,11 @@
     </div>
 
     <!-- ASSIGNMENT MODAL -->
-    <div id="assignment-modal-overlay" class="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0" onclick="window.closeAssignmentModal(event)">
+    <div id="assignment-modal-overlay" class="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeAssignmentModal(event)">
         <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform scale-95 opacity-0 transition-all p-6">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Add Assignment</h3>
+            <h3 id="modal-form-title" class="text-lg font-bold text-gray-900 dark:text-white mb-4">Add Assignment</h3>
             <form id="assignment-form" onsubmit="window.handleAssignmentSubmit(event)">
+                <input type="hidden" id="task-id">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Title</label>
@@ -226,10 +221,102 @@
         </div>
     </div>
 
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="delete-modal-overlay" class="fixed inset-0 z-[140] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 transform scale-95 opacity-0 transition-all modal-content text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Delete Task?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">This action cannot be undone.</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="window.closeDeleteModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
+                <button onclick="window.confirmDelete()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDY MODE OVERLAY -->
+    <div id="study-overlay" class="fixed inset-0 z-[200] bg-white dark:bg-gray-950 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden transition-all duration-300">
+        <!-- Close Button -->
+        <button onclick="window.toggleStudyMode()" class="absolute top-6 right-6 z-50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/20 animate-pulse-slow z-0 pointer-events-none"></div>
+        <div class="z-10 flex flex-col items-center gap-6 p-8 max-w-md w-full">
+            <div class="text-center space-y-2">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Focus Session</h2>
+                <div id="today-stats" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-full inline-block mt-2">
+                    Today: 0 min studied
+                </div>
+            </div>
+
+            <!-- Timer/Stopwatch Toggle -->
+            <div class="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-lg">
+                <button onclick="window.setTimerMode('countdown')" id="tab-countdown" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white">Timer</button>
+                <button onclick="window.setTimerMode('stopwatch')" id="tab-stopwatch" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Stopwatch</button>
+            </div>
+
+            <div class="relative w-80 h-80 flex items-center justify-center group">
+                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="6" class="text-gray-100 dark:text-gray-800"/>
+                    <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="6" class="text-indigo-500 timer-circle" stroke-dasharray="565.48" stroke-dashoffset="0" stroke-linecap="round" />
+                </svg>
+                
+                <!-- Inner Container for Centered Content -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
+                    
+                    <!-- Display Time (Click to Edit) -->
+                    <div id="timer-display-container" class="text-center group-edit">
+                        <div id="timer-display" 
+                             onclick="window.startEditingTimer()" 
+                             class="text-7xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter leading-none cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                             title="Click to edit duration">
+                             25:00
+                        </div>
+                        <p id="timer-label" class="text-xs text-gray-400 font-medium uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</p>
+                    </div>
+
+                    <!-- Input Field (Hidden by default) -->
+                    <div id="timer-edit-container" class="hidden flex-col items-center gap-2">
+                        <div class="flex items-center justify-center gap-2">
+                            <input type="number" id="edit-minutes" class="w-24 bg-transparent border-b-2 border-indigo-500 text-5xl font-mono text-center text-gray-900 dark:text-white focus:outline-none" min="1" max="180" placeholder="25">
+                            <span class="text-sm text-gray-500 font-medium uppercase">min</span>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="window.saveEditedTime()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded shadow">Set</button>
+                            <button onclick="window.cancelEditingTimer()" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- +/- Controls (Absolute to not affect centering) -->
+                    <div id="countdown-controls" class="absolute bottom-16 flex gap-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+                        <button onclick="window.adjustTime(-5)" class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center shadow-sm transition-transform hover:scale-110 active:scale-95" title="-5 min">
+                            <span class="font-bold text-lg">-5</span>
+                        </button>
+                        <button onclick="window.adjustTime(5)" class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center shadow-sm transition-transform hover:scale-110 active:scale-95" title="+5 min">
+                            <span class="font-bold text-lg">+5</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <button onclick="window.toggleTimer()" id="timer-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-full font-bold text-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2">Start</button>
+                <button onclick="window.resetTimer()" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 p-4 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow-md" title="Reset">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- COURSE DETAILS MODAL -->
-    <div id="course-modal-overlay" class="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0" onclick="window.closeCourseModal(event)">
+    <div id="course-modal-overlay" class="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeCourseModal(event)">
         <div id="course-modal-content" class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform scale-95 opacity-0 transition-all">
-            <div id="modal-header" class="p-6 text-white relative">
+            <div id="modal-header" class="p-6 text-white relative bg-indigo-600">
                 <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -275,120 +362,47 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         View Syllabus
                     </a>
-                    <a href="https://brightspace.stonybrook.edu" target="_blank" class="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-lg font-medium text-sm transition-colors text-center flex items-center justify-center">
-                        Go to Brightspace
-                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- STUDY MODE OVERLAY -->
-    <div id="study-overlay" class="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center hidden opacity-0 overflow-hidden">
-        <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/30 animate-pulse-slow z-0 pointer-events-none"></div>
-        <div class="z-10 flex flex-col items-center gap-8 p-8 max-w-md w-full">
-            <div class="text-center space-y-2">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Focus Session</h2>
-                <p class="text-gray-500 dark:text-gray-400">Distraction-free mode enabled.</p>
-            </div>
-            <div class="relative w-64 h-64 flex items-center justify-center">
-                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-                    <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700"/>
-                    <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="8" class="text-indigo-500 transition-all duration-1000 ease-linear" stroke-dasharray="565.48" stroke-dashoffset="0" stroke-linecap="round" />
-                </svg>
-                <div class="text-6xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter relative z-10" id="timer-display">25:00</div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="toggleTimer()" id="timer-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-full font-semibold text-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2">Start</button>
-                <button onclick="resetTimer()" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-all" title="Reset">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                </button>
-            </div>
-            <button onclick="exitStudyMode()" class="text-sm text-gray-400 hover:text-red-500 mt-8 transition-colors flex items-center gap-1">Exit Study Mode</button>
-        </div>
-    </div>
+    <!-- MAIN LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    <!-- MAIN LOGIC (Standard Script) -->
-    <script>
-        // --- SECURITY CHECK ---
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('student') === 'daniel') {
-            document.title = "404 - Not Found";
-            document.body.innerHTML = `<div class="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-6xl font-bold">404</h1><p class="text-xl mt-4">Access Denied</p></div>`;
-            throw new Error("Access Denied");
-        }
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // --- GLOBAL VARIABLES ---
-        let db = null; // Will be set by module if Firebase loads
-        let assignments = []; 
-        let currentCalendarDate = new Date();
+        // --- CONSTANTS & CONFIG (DEFINED FIRST TO AVOID REF ERRORS) ---
+        const START_HOUR = 8;
+        const END_HOUR = 19; // 7 PM
+        const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
 
-        // --- SCHEDULE DATASET ---
         const schedule = [
-            { 
-                day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', 
-                prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec',
-                exams: [ 
-                    { name: 'Midterm 1', date: '2025-02-25' }, 
-                    { name: 'Midterm 2', date: '2025-04-05' }, 
-                    { name: 'Final', date: '2025-05-14' } 
-                ],
-                syllabusUrl: '#'
-            },
-            { 
-                day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', 
-                prof: 'Isaac Carrico', fullTitle: 'Molecular Science II',
-                exams: [ 
-                    { name: 'Exam 1', date: '2026-02-19' }, 
-                    { name: 'Exam 2', date: '2026-03-26' },
-                    { name: 'Exam 3', date: '2026-04-23' },
-                    { name: 'Final', date: '2026-05-15' } 
-                ],
-                syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing'
-            },
-            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
-            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [], syllabusUrl: '#' },
-            { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
-            { 
-                day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', 
-                prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', 
-                exams: [ 
-                    { name: 'Exam 1', date: '2026-02-19' }, 
-                    { name: 'Exam 2', date: '2026-03-26' },
-                    { name: 'Exam 3', date: '2026-04-23' },
-                    { name: 'Final', date: '2026-05-15' } 
-                ],
-                syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing'
-            },
-            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: '#' },
-            { day: 'wed', title: 'SBU 102 - S143', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Soc & Behav Sci N703', prof: 'Jason Rose', fullTitle: 'Undergraduate College Seminar', exams: [], syllabusUrl: '#' },
-            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: '#' },
-            { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}], syllabusUrl: '#' },
-            { 
-                day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', 
-                prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', 
-                exams: [ 
-                    { name: 'Exam 1', date: '2026-02-19' }, 
-                    { name: 'Exam 2', date: '2026-03-26' },
-                    { name: 'Exam 3', date: '2026-04-23' },
-                    { name: 'Final', date: '2026-05-15' } 
-                ],
-                syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing'
-            },
-            // Online/Async (for reference/dropdowns)
-            { day: 'online', title: 'PHY 132', type: 'Lecture', loc: 'Online', prof: 'T. Hemmick', fullTitle: 'Classical Physics II', exams: [], syllabusUrl: '#' },
-            { day: 'online', title: 'PHY 134', type: 'Laboratory', loc: 'Online', prof: 'Staff', fullTitle: 'Classical Physics Lab II', exams: [], syllabusUrl: '#' },
+            { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: 'Midterm 1', date: '2025-02-25' }, { name: 'Midterm 2', date: '2025-04-05' }, { name: 'Final', date: '2025-05-14' }] },
+            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
+            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=sharing' },
+            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [] },
+            { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}] },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
+            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=sharing' },
+            { day: 'wed', title: 'SBU 102 - S143', type: 'Seminar', start: '12:30', end: '13:50', loc: 'Soc & Behav Sci N703', prof: 'Jason Rose', fullTitle: 'Undergraduate College Seminar', exams: [] },
+            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [] },
+            { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}] },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
         ];
 
         const rawColors = {
-            'CHE 383': '#059669', // Emerald
-            'CHE 331': '#2563eb', // Blue
-            'AMS 161': '#e11d48', // Rose
-            'WRT 102': '#d97706', // Amber
-            'SBU 102': '#c026d3', // Fuchsia
-            'PHY 132': '#0891b2', // Cyan
-            'PHY 134': '#7c3aed', // Violet
-            'Other': '#4b5563'    // Gray
+            'CHE 383': '#059669', 'CHE 331': '#2563eb', 'AMS 161': '#e11d48',
+            'WRT 102': '#d97706', 'SBU 102': '#c026d3', 'PHY 132': '#0891b2',
+            'PHY 134': '#7c3aed', 'Other': '#4b5563'
         };
 
         const colors = {
@@ -402,250 +416,476 @@
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
         };
 
-        const START_HOUR = 8; 
-        const END_HOUR = 19; 
-        const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
-        
-        // --- HELPER FUNCTIONS (Restored) ---
-        function getMinutesFromStart(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return ((hours * 60) + minutes) - (START_HOUR * 60);
-        }
+        // --- STATE VARIABLES ---
+        let userId = null;
+        let assignments = []; 
+        let currentCalendarDate = new Date();
+        let assignmentToDelete = null;
 
-        function getAbsoluteMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return (hours * 60) + minutes;
-        }
+        // --- TIMER VARIABLES ---
+        let timerInterval = null;
+        let timeLeft = 25 * 60; // 25 minutes default
+        let isTimerRunning = false;
+        let defaultTime = 25 * 60;
+        let timerMode = 'countdown'; // 'countdown' or 'stopwatch'
+        let stopwatchSeconds = 0;
+        const FULL_DASH_ARRAY = 565.48;
 
-        function formatTime(timeStr) {
-            let [h, m] = timeStr.split(':');
-            h = parseInt(h);
-            const suffix = h >= 12 ? 'PM' : 'AM';
-            const h12 = h > 12 ? h - 12 : h;
-            return `${h12}:${m} ${suffix}`;
-        }
-
-        function formatDuration(minutes) {
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            return h > 0 ? (m > 0 ? `${h} hr ${m} min` : `${h} hr`) : `${m} min`;
-        }
-
-        function minutesToTimeStr(totalMinutes) {
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            const pad = (n) => n < 10 ? '0' + n : n;
-            return `${h}:${pad(m)}`;
-        }
-
-        // --- GLOBAL UI FUNCTIONS ---
-        function initDarkMode() {
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                const sun = document.getElementById('sun-icon');
-                const moon = document.getElementById('moon-icon');
-                if (sun) sun.classList.remove('hidden');
-                if (moon) moon.classList.add('hidden');
+        // --- AUTH & DATA FETCHING ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
             }
-        }
+        };
 
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            const sun = document.getElementById('sun-icon');
-            const moon = document.getElementById('moon-icon');
-            if (sun) sun.classList.toggle('hidden', !isDark);
-            if (moon) moon.classList.toggle('hidden', isDark);
-        }
+        initAuth();
 
-        // --- CALENDAR LOGIC ---
-        function changeMonth(delta) {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            if (!grid) return;
-            const monthYear = document.getElementById('calendar-month-year');
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            
-            monthYear.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
-            grid.innerHTML = '';
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const today = new Date();
-
-            for (let i = 0; i < firstDay; i++) {
-                const div = document.createElement('div');
-                div.className = "h-28 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg";
-                grid.appendChild(div);
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const div = document.createElement('div');
-                const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                document.getElementById('auth-status').innerText = 'Syncing...';
                 
-                div.className = `h-28 bg-white dark:bg-gray-800 border ${isToday ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-100 dark:border-gray-700'} rounded-lg p-1.5 flex flex-col relative group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer`;
-                
-                div.onclick = () => openDayView(dateStr);
-
-                div.innerHTML = `<span class="text-xs font-semibold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}">${day}</span>`;
-                
-                div.innerHTML += `
-                    <button onclick="event.stopPropagation(); openAssignmentModal('${dateStr}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 bg-indigo-50 dark:bg-indigo-900 rounded text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition-opacity z-10" title="Add Task">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                    </button>
-                    <div class="mt-1 flex flex-col gap-1 overflow-y-auto no-scrollbar" style="max-height: 5rem;"></div>
-                `;
-
-                const dayAssignments = assignments.filter(a => a.date === dateStr);
-                const container = div.querySelector('div.flex-col');
-                
-                dayAssignments.forEach(a => {
-                    const pill = document.createElement('div');
-                    let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
-                    const color = rawColors[colorKey] || rawColors['Other'];
-                    
-                    pill.className = "text-[10px] px-1.5 py-0.5 rounded text-white truncate shadow-sm";
-                    pill.style.backgroundColor = color;
-                    pill.innerText = `${a.course.split(' ')[0]} - ${a.title}`;
-                    container.appendChild(pill);
+                // Firestore Listener
+                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'assignments'));
+                onSnapshot(q, (snapshot) => {
+                    assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderCalendar();
+                    // Update open modals if needed
+                    const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
+                    if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
+                        renderDayViewContent(dayViewDate);
+                    }
+                    document.getElementById('auth-status').innerText = 'Synced';
+                }, (error) => {
+                    console.error("Firestore Error:", error);
+                    document.getElementById('auth-status').innerText = 'Offline Mode';
                 });
 
-                grid.appendChild(div);
+                fetchStudyStats(); // Fetch today's study time
+            }
+        });
+
+        // --- STUDY STATS ---
+        async function fetchStudyStats() {
+            if(!userId) return;
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            // Simple query - fetch all and filter in memory
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'));
+                const snapshot = await getDocs(q);
+                let totalMinutes = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.timestamp && data.timestamp.toDate() >= today) {
+                        totalMinutes += data.duration || 0;
+                    }
+                });
+                
+                updateStatsDisplay(totalMinutes);
+            } catch(e) {
+                console.log("Stats fetch error", e);
             }
         }
 
-        // --- DATA MANAGEMENT FUNCTIONS ---
-        // These will be overridden by the module script if Firebase works
-        window.addAssignment = function(data) {
-             assignments.push({ id: Date.now().toString(), ...data });
-             localStorage.setItem('alice_assignments', JSON.stringify(assignments));
-             renderCalendar();
-        };
+        function updateStatsDisplay(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            const text = h > 0 ? `${h}h ${m}m studied` : `${m} min studied`;
+            document.getElementById('today-stats').innerText = `Today: ${text}`;
+        }
 
-        window.deleteAssignment = function(id) {
-             assignments = assignments.filter(a => a.id !== id);
-             localStorage.setItem('alice_assignments', JSON.stringify(assignments));
-             renderCalendar();
-        };
+        async function saveStudySession(durationMinutes) {
+            if(!userId || durationMinutes < 1) return;
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'), {
+                    duration: durationMinutes,
+                    timestamp: new Date()
+                });
+                fetchStudyStats();
+            } catch(e) { console.error("Save session error", e); }
+        }
 
-        function deleteAssignmentUI(id) {
-            if (confirm('Delete this task?')) {
-                window.deleteAssignment(id);
+        // --- UPDATED DAILY CLASSES FUNCTION (RESTORED) ---
+        function updateTodayClasses() {
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const todayKey = days[new Date().getDay()];
+            // Sort by time: extract HH:MM and convert
+            const todayClasses = schedule.filter(s => s.day === todayKey).sort((a,b) => {
+                const [ah, am] = a.start.split(':').map(Number);
+                const [bh, bm] = b.start.split(':').map(Number);
+                return (ah*60+am) - (bh*60+bm);
+            });
+            
+            const el = document.getElementById('today-classes');
+            if (todayClasses.length > 0) {
+                // Get short titles like CHE 383
+                const names = todayClasses.map(c => c.title.split(' - ')[0]).join(', ');
+                el.innerText = `Today: ${names}`;
+                el.title = todayClasses.map(c => `${c.title} (${c.start})`).join('\n'); // Tooltip
+            } else {
+                el.innerText = "No classes today";
             }
         }
 
-        // --- MODAL & UI HANDLERS ---
-        function openAssignmentModal(dateStr) {
+        // --- TIMER FUNCTIONS ---
+        function updateTimerDisplay() {
+            let total = 0;
+            if (timerMode === 'countdown') {
+                total = defaultTime;
+            } else {
+                total = 60 * 60; // 60 mins ref for visual ring in stopwatch mode
+            }
+            
+            const current = timerMode === 'countdown' ? timeLeft : stopwatchSeconds;
+            
+            const minutes = Math.floor(current / 60);
+            const seconds = current % 60;
+            const display = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            document.getElementById('timer-display').innerText = display;
+            
+            // Update Circle
+            let rawFraction = 0;
+            if (timerMode === 'countdown') {
+                rawFraction = timeLeft / defaultTime;
+            } else {
+                // For stopwatch, loop ring every 60 mins or just fill up
+                rawFraction = (stopwatchSeconds % 3600) / 3600; 
+                rawFraction = 1 - rawFraction; // inverse for filling up visual if desired, or just spin
+            }
+            
+            const fraction = rawFraction - (1 / total) * (1 - rawFraction);
+            const offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
+            document.getElementById('timer-progress').style.strokeDashoffset = offset;
+
+            // Show/Hide Edit Hint
+            const label = document.getElementById('timer-label');
+            if (label) {
+                if (timerMode === 'countdown' && !isTimerRunning) {
+                    label.classList.remove('hidden');
+                } else {
+                    label.classList.add('hidden');
+                }
+            }
+        }
+
+        window.setTimerMode = (mode) => {
+            timerMode = mode;
+            window.resetTimer(); // Stop and reset whenever switching
+            
+            // Update UI Tabs
+            const tCountdown = document.getElementById('tab-countdown');
+            const tStopwatch = document.getElementById('tab-stopwatch');
+            const controls = document.getElementById('countdown-controls');
+            const display = document.getElementById('timer-display');
+            const label = document.getElementById('timer-label');
+            
+            if (mode === 'countdown') {
+                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
+                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                controls.classList.remove('hidden');
+                display.classList.add('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
+                display.classList.remove('cursor-default');
+                label.classList.remove('invisible');
+            } else {
+                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
+                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                controls.classList.add('hidden');
+                display.classList.remove('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
+                display.classList.add('cursor-default');
+                label.classList.add('invisible');
+            }
+        };
+
+        window.adjustTime = (minutes) => {
+            if (isTimerRunning || timerMode !== 'countdown') return;
+            const newTime = defaultTime + (minutes * 60);
+            if (newTime >= 60) { // Minimum 1 minute
+                defaultTime = newTime;
+                timeLeft = newTime;
+                updateTimerDisplay();
+            }
+        };
+
+        window.toggleStudyMode = () => {
+            const overlay = document.getElementById('study-overlay');
+            if (overlay.classList.contains('hidden')) {
+                // Open Focus Mode
+                document.body.classList.add('overflow-hidden'); // Lock scroll
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                updateTimerDisplay();
+                fetchStudyStats();
+            } else {
+                // Close Focus Mode
+                document.body.classList.remove('overflow-hidden'); // Unlock scroll
+                
+                // Auto-pause if exiting while running
+                if (isTimerRunning) window.toggleTimer();
+                
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        };
+
+        window.startEditingTimer = () => {
+            if (isTimerRunning || timerMode !== 'countdown') return;
+            document.getElementById('timer-display-container').classList.add('hidden');
+            document.getElementById('timer-edit-container').classList.remove('hidden');
+            document.getElementById('timer-edit-container').classList.add('flex');
+            
+            const input = document.getElementById('edit-minutes');
+            input.value = Math.floor(defaultTime / 60);
+            input.focus();
+            
+            // Handle Enter key
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') window.saveEditedTime();
+                if (e.key === 'Escape') window.cancelEditingTimer();
+            };
+        };
+
+        window.saveEditedTime = () => {
+            const input = document.getElementById('edit-minutes');
+            let mins = parseInt(input.value);
+            if (mins && mins > 0) {
+                defaultTime = mins * 60;
+                timeLeft = defaultTime;
+                updateTimerDisplay();
+            }
+            window.cancelEditingTimer();
+        };
+
+        window.cancelEditingTimer = () => {
+            document.getElementById('timer-edit-container').classList.add('hidden');
+            document.getElementById('timer-edit-container').classList.remove('flex');
+            document.getElementById('timer-display-container').classList.remove('hidden');
+        };
+
+        window.toggleTimer = () => {
+            const btn = document.getElementById('timer-btn');
+            if (isTimerRunning) {
+                // Pause Logic
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerHTML = `Start`;
+                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                
+                // If stopwatch paused, save progress immediately? Or wait for reset?
+                // Let's save on pause for stopwatch to be safe
+                if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
+                    saveStudySession(Math.floor(stopwatchSeconds / 60));
+                    stopwatchSeconds = 0; // Reset after save or keep? Usually reset. 
+                    // Actually, let's NOT reset on pause, user might resume.
+                    // Complex logic: Only save on RESET or EXIT. 
+                    // Reverting: We will only save on explicit finish or reset.
+                }
+            } else {
+                // Start Logic
+                isTimerRunning = true;
+                btn.innerHTML = `Pause`;
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                btn.classList.add('bg-red-500', 'hover:bg-red-600');
+                
+                // Hide edit hint when running
+                const label = document.getElementById('timer-label');
+                if (label) label.classList.add('invisible');
+                
+                timerInterval = setInterval(() => {
+                    if (timerMode === 'countdown') {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            // Finished
+                            clearInterval(timerInterval);
+                            isTimerRunning = false;
+                            saveStudySession(Math.floor(defaultTime / 60));
+                            timeLeft = defaultTime;
+                            updateTimerDisplay();
+                            btn.innerHTML = `Start`;
+                            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                            alert("Session Complete!");
+                        }
+                    } else {
+                        // Stopwatch
+                        stopwatchSeconds++;
+                        updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+        };
+
+        window.resetTimer = () => {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            
+            // If stopwatch had data, save it before resetting
+            if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
+                saveStudySession(Math.floor(stopwatchSeconds / 60));
+            }
+
+            timeLeft = defaultTime;
+            stopwatchSeconds = 0;
+            updateTimerDisplay();
+            
+            const btn = document.getElementById('timer-btn');
+            btn.innerHTML = `Start`;
+            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        };
+
+        window.openAssignmentModal = (dateStr) => {
             const modal = document.getElementById('assignment-modal-overlay');
+            document.getElementById('modal-form-title').innerText = "Add Assignment";
+            document.getElementById('task-id').value = ""; // Clear ID for new task
             if (dateStr) document.getElementById('task-date').value = dateStr;
+            else document.getElementById('task-date').value = ""; // Clear if opening general
+            document.getElementById('task-title').value = "";
+            document.getElementById('task-notes').value = "";
+            
             modal.classList.remove('hidden');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 modal.classList.remove('opacity-0');
                 const content = modal.querySelector('.modal-content');
-                content.classList.remove('scale-95');
-                content.classList.remove('opacity-0');
-            }, 10);
-        }
+                content.classList.remove('scale-95', 'opacity-0');
+            });
+        };
 
-        function closeAssignmentModal(e, force = false) {
+        window.editAssignmentUI = (id) => {
+            // Close Day View immediately
+            window.closeDayView();
+
+            const task = assignments.find(a => a.id === id);
+            if (!task) return;
+
+            const modal = document.getElementById('assignment-modal-overlay');
+            document.getElementById('modal-form-title').innerText = "Edit Assignment";
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-course').value = task.course;
+            document.getElementById('task-type').value = task.type;
+            document.getElementById('task-date').value = task.date;
+            document.getElementById('task-notes').value = task.notes || "";
+
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                const content = modal.querySelector('.modal-content');
+                content.classList.remove('scale-95', 'opacity-0');
+            });
+        };
+
+        window.closeAssignmentModal = (e, force = false) => {
             if (force || e.target.id === 'assignment-modal-overlay') {
                 const modal = document.getElementById('assignment-modal-overlay');
                 modal.classList.add('opacity-0');
                 const content = modal.querySelector('.modal-content');
-                content.classList.add('scale-95');
-                content.classList.add('opacity-0');
+                content.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     document.getElementById('assignment-form').reset();
                 }, 200);
             }
-        }
+        };
 
-        function handleAssignmentSubmit(e) {
+        window.handleAssignmentSubmit = async (e) => {
             e.preventDefault();
+            if (!userId) return; // Simple check
+
+            const id = document.getElementById('task-id').value;
             const title = document.getElementById('task-title').value;
             const course = document.getElementById('task-course').value;
             const type = document.getElementById('task-type').value;
             const date = document.getElementById('task-date').value;
-            const notes = document.getElementById('task-notes').value; 
+            const notes = document.getElementById('task-notes').value;
 
             if (title && date) {
-                window.addAssignment({ title, course, type, date, notes });
-                closeAssignmentModal(null, true);
+                try {
+                    if (id) {
+                        // Update existing
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'assignments', id), {
+                            title, course, type, date, notes
+                        });
+                    } else {
+                        // Create new
+                        await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'assignments'), {
+                            title, course, type, date, notes, createdAt: new Date()
+                        });
+                    }
+                    window.closeAssignmentModal(null, true);
+                } catch (err) {
+                    console.error("Error saving doc:", err);
+                }
             }
-        }
-        
-        function openDayView(dateStr) {
+        };
+
+        window.openDayView = (dateStr) => {
             const modal = document.getElementById('day-view-overlay');
             const dateObj = new Date(dateStr + 'T00:00:00');
-            document.getElementById('day-view-date').innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            document.getElementById('day-view-date').dataset.date = dateStr;
+            const titleEl = document.getElementById('day-view-date');
+            titleEl.innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            titleEl.dataset.date = dateStr;
             
             renderDayViewContent(dateStr);
             
             modal.classList.remove('hidden');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 modal.classList.remove('opacity-0');
-                modal.querySelector('.modal-content').classList.remove('translate-y-4');
-            }, 10);
-        }
-
-        function renderDayViewContent(dateStr) {
-            const list = document.getElementById('day-view-list');
-            if (!list) return;
-            list.innerHTML = '';
-            
-            const dayAssignments = assignments.filter(a => a.date === dateStr);
-            
-            if (dayAssignments.length === 0) {
-                list.innerHTML = `<div class="flex flex-col items-center justify-center py-10 text-gray-400"><p>No tasks for this day.</p><button onclick="window.closeDayView(); window.openAssignmentModal('${dateStr}')" class="mt-4 text-indigo-600 hover:underline text-sm">Add a task</button></div>`;
-                return;
-            }
-
-            dayAssignments.forEach(a => {
-                let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
-                const color = rawColors[colorKey] || rawColors['Other'];
-
-                const item = document.createElement('div');
-                item.className = "flex gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 relative group";
-                item.innerHTML = `
-                    <div class="w-1.5 self-stretch rounded-full" style="background-color: ${color}"></div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <div><span class="text-xs font-bold px-2 py-0.5 rounded text-white mb-1 inline-block" style="background-color: ${color}">${a.course}</span><span class="text-xs font-medium text-gray-500 uppercase ml-2 tracking-wide">${a.type}</span></div>
-                            <button onclick="window.deleteAssignmentUI('${a.id}')" class="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">x</button>
-                        </div>
-                        <h4 class="font-bold text-gray-900 dark:text-white text-lg mt-1">${a.title}</h4>
-                        ${a.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-750 p-3 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-pre-wrap">${a.notes}</div>` : ''}
-                    </div>
-                `;
-                list.appendChild(item);
+                modal.querySelector('.modal-content').classList.remove('translate-y-4', 'opacity-0');
             });
-        }
+        };
 
-        function closeDayView() {
+        window.closeDayView = () => {
             const modal = document.getElementById('day-view-overlay');
             modal.classList.add('opacity-0');
-            modal.querySelector('.modal-content').classList.add('translate-y-4');
+            modal.querySelector('.modal-content').classList.add('translate-y-4', 'opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 200);
-        }
+        };
 
-        // --- COURSE MODAL ---
-        function getDaysUntil(dateStr) {
-            if (!dateStr) return null;
-            const now = new Date();
-            const target = new Date(dateStr);
-            const diffTime = target - now;
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
+        // --- DELETE MODAL HANDLERS ---
+        window.openDeleteModal = (id) => {
+            assignmentToDelete = id;
+            const modal = document.getElementById('delete-modal-overlay');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                const content = modal.querySelector('.modal-content');
+                content.classList.remove('scale-95', 'opacity-0');
+            });
+        };
 
-        function openCourseModal(eventDataStr) {
+        window.closeDeleteModal = () => {
+            const modal = document.getElementById('delete-modal-overlay');
+            modal.classList.add('opacity-0');
+            const content = modal.querySelector('.modal-content');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                assignmentToDelete = null;
+            }, 200);
+        };
+
+        window.confirmDelete = async () => {
+            if (assignmentToDelete && userId) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'assignments', assignmentToDelete));
+                    window.closeDeleteModal();
+                } catch (e) { console.error(e); }
+            }
+        };
+
+        window.openCourseModal = (eventDataStr) => {
             const data = JSON.parse(decodeURIComponent(eventDataStr));
             const modal = document.getElementById('course-modal-overlay');
             const codeKey = data.title.substring(0, 7);
@@ -672,67 +912,136 @@
                 syllabusBtn.innerText = "No Syllabus Link";
             }
 
+            // Exams logic
             const examGrid = document.getElementById('modal-exam-grid');
-            examGrid.innerHTML = ''; 
+            examGrid.innerHTML = '';
             if (data.exams && data.exams.length > 0) {
+                const getDays = (d) => Math.ceil((new Date(d) - new Date()) / (1000 * 60 * 60 * 24));
                 data.exams.forEach(exam => {
-                    const daysLeft = getDaysUntil(exam.date);
-                    let countText = "--"; let countClass = "text-xl font-bold text-gray-400"; let dateText = "TBA";
-                    if (daysLeft !== null) {
-                        if (daysLeft < 0) { countText = "Done"; countClass = "text-xl font-bold text-gray-400"; }
-                        else { countText = daysLeft; countClass = "text-xl font-bold text-indigo-600 dark:text-indigo-400"; }
-                        dateText = new Date(exam.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                    const daysLeft = getDays(exam.date);
+                    let countText = "--", countClass = "text-xl font-bold text-gray-400";
+                    if (daysLeft < 0) countText = "Done";
+                    else {
+                        countText = daysLeft;
+                        countClass = "text-xl font-bold text-indigo-600 dark:text-indigo-400";
                     }
+                    const dateText = new Date(exam.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                    
                     const card = document.createElement('div');
                     card.className = "bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center";
                     card.innerHTML = `<p class="text-xs text-gray-500 uppercase truncate">${exam.name}</p><p class="${countClass}">${countText}</p><p class="text-[10px] text-gray-400">Days Left</p><p class="text-[10px] text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">${dateText}</p>`;
                     examGrid.appendChild(card);
                 });
-                if (data.exams.length % 2 !== 0 && data.exams.length > 1) {
-                    examGrid.lastElementChild.classList.add('col-span-2'); 
-                }
             } else {
-                examGrid.innerHTML = `<div class="col-span-2 text-center text-sm text-gray-400 italic py-2">No exams listed for this course.</div>`;
+                examGrid.innerHTML = `<div class="col-span-2 text-center text-sm text-gray-400 italic py-2">No exams listed.</div>`;
             }
 
             modal.classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 modal.classList.remove('opacity-0');
                 const content = modal.querySelector('.modal-content');
-                if (content) {
-                    content.classList.add('modal-open');
-                    content.classList.remove('modal-closed');
-                    content.classList.remove('opacity-0');
-                    content.classList.remove('scale-95');
-                }
-            }, 10);
-        }
+                content.classList.remove('scale-95', 'opacity-0');
+            });
+        };
 
-        function closeCourseModal(e) {
+        window.closeCourseModal = (e) => {
             if (e.target.id === 'course-modal-overlay' || e.currentTarget.tagName === 'BUTTON') {
                 const modal = document.getElementById('course-modal-overlay');
-                const content = modal.querySelector('.modal-content');
-                
-                modal.classList.remove('modal-open');
-                if (content) {
-                    content.classList.add('modal-closed');
-                    content.classList.add('opacity-0');
-                }
                 modal.classList.add('opacity-0');
+                const content = modal.querySelector('.modal-content');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        };
+
+        // --- RENDERING FUNCTIONS ---
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            if (!grid) return;
+            const monthYear = document.getElementById('calendar-month-year');
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const today = new Date();
+            
+            monthYear.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+            grid.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const div = document.createElement('div');
+                div.className = "h-28 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg";
+                grid.appendChild(div);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const div = document.createElement('div');
+                const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                 
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    document.body.classList.remove('overflow-hidden');
-                }, 300);
+                div.className = `h-28 bg-white dark:bg-gray-800 border ${isToday ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-100 dark:border-gray-700'} rounded-lg p-1.5 flex flex-col relative group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer`;
+                div.onclick = () => window.openDayView(dateStr);
+
+                let html = `<span class="text-xs font-semibold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}">${day}</span>`;
+                html += `<button onclick="event.stopPropagation(); window.openAssignmentModal('${dateStr}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 bg-indigo-50 dark:bg-indigo-900 rounded text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition-opacity z-10" title="Add Task"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg></button>`;
+                html += `<div class="mt-1 flex flex-col gap-1 overflow-y-auto no-scrollbar" style="max-height: 5rem;">`;
+                
+                const dayAssignments = assignments.filter(a => a.date === dateStr);
+                dayAssignments.forEach(a => {
+                    let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
+                    const color = rawColors[colorKey] || rawColors['Other'];
+                    html += `<div class="text-[10px] px-1.5 py-0.5 rounded text-white truncate shadow-sm" style="background-color: ${color}">${a.course.split(' ')[0]} - ${a.title}</div>`;
+                });
+                html += `</div>`;
+                div.innerHTML = html;
+                grid.appendChild(div);
             }
         }
 
-        // --- RENDER SCHEDULE ---
+        function renderDayViewContent(dateStr) {
+            window.renderDayViewContent = renderDayViewContent; // ensure global avail for refresh
+            const list = document.getElementById('day-view-list');
+            if (!list) return;
+            list.innerHTML = '';
+            
+            const dayAssignments = assignments.filter(a => a.date === dateStr);
+            if (dayAssignments.length === 0) {
+                list.innerHTML = `<div class="flex flex-col items-center justify-center py-10 text-gray-400"><p>No tasks for this day.</p><button onclick="window.closeDayView(); window.openAssignmentModal('${dateStr}')" class="mt-4 text-indigo-600 hover:underline text-sm">Add a task</button></div>`;
+                return;
+            }
+
+            dayAssignments.forEach(a => {
+                let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
+                const color = rawColors[colorKey] || rawColors['Other'];
+                const item = document.createElement('div');
+                item.className = "flex gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 relative group";
+                item.innerHTML = `
+                    <div class="w-1.5 self-stretch rounded-full" style="background-color: ${color}"></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <div><span class="text-xs font-bold px-2 py-0.5 rounded text-white mb-1 inline-block" style="background-color: ${color}">${a.course}</span><span class="text-xs font-medium text-gray-500 uppercase ml-2 tracking-wide">${a.type}</span></div>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="window.editAssignmentUI('${a.id}')" class="text-gray-400 hover:text-indigo-600 p-1" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onclick="window.openDeleteModal('${a.id}')" class="text-gray-400 hover:text-red-500 p-1" title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-lg mt-1">${a.title}</h4>
+                        ${a.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-750 p-3 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-pre-wrap">${a.notes}</div>` : ''}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
         function renderSchedule() {
             const timeContainer = document.getElementById('time-labels');
             if (timeContainer) {
-                timeContainer.innerHTML = ''; 
+                timeContainer.innerHTML = '';
                 for (let h = START_HOUR; h < END_HOUR; h++) {
                     const label = document.createElement('div');
                     const marginTop = h === START_HOUR ? '-mt-0' : '-mt-2';
@@ -742,126 +1051,107 @@
                     timeContainer.appendChild(label);
                 }
             }
+            // Clear columns
+            ['mon','tue','wed','thu','fri'].forEach(d => {
+                const col = document.getElementById(`col-${d}`);
+                if(col) col.innerHTML = '';
+            });
 
+            // Render Events
             schedule.forEach(event => {
-                if (event.day === 'online') return;
                 const container = document.getElementById(`col-${event.day}`);
                 if (!container) return;
                 
-                const startMin = getMinutesFromStart(event.start);
-                const heightPercent = ((getAbsoluteMinutes(event.end) - getAbsoluteMinutes(event.start)) / TOTAL_MINUTES) * 100;
+                const getMinutes = (timeStr) => {
+                    const [h, m] = timeStr.split(':').map(Number);
+                    return ((h * 60) + m) - (START_HOUR * 60);
+                };
+                const formatTime = (timeStr) => {
+                    let [h, m] = timeStr.split(':');
+                    h = parseInt(h);
+                    const suffix = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h > 12 ? h - 12 : h;
+                    return `${h12}:${m} ${suffix}`;
+                };
+
+                const startMin = getMinutes(event.start);
+                const durationMin = ((parseInt(event.end.split(':')[0])*60 + parseInt(event.end.split(':')[1])) - (parseInt(event.start.split(':')[0])*60 + parseInt(event.start.split(':')[1])));
+                const heightPercent = (durationMin / TOTAL_MINUTES) * 100;
                 
                 const card = document.createElement('div');
                 const codeKey = event.title.substring(0, 7);
                 const colorSet = colors[codeKey] || colors['default'];
                 
-                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark}`;
-                card.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
-                card.style.height = `${heightPercent}%`;
-                card.onclick = () => openCourseModal(encodeURIComponent(JSON.stringify(event)));
-                
-                let examBadge = '';
-                if (event.exams) {
-                     const upcomingExams = event.exams.map(e => ({ ...e, days: getDaysUntil(e.date) })).filter(e => e.days !== null && e.days >= 0).sort((a, b) => a.days - b.days);
-                     if (upcomingExams.length > 0) {
-                         const next = upcomingExams[0];
-                         const isUrgent = next.days <= 7;
-                         const badgeColor = isUrgent ? 'bg-red-500 text-white' : 'bg-white/50 dark:bg-black/30 text-gray-800 dark:text-gray-200';
-                         examBadge = `<div class="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColor} inline-block truncate w-full">${isUrgent ? '🔥 ' : '📅 '}${next.name}: ${next.days}d</div>`;
-                     }
+                // Logic for Exam Badge
+                let examHtml = '';
+                if (event.exams && event.exams.length > 0) {
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const upcomingExams = event.exams.map(e => {
+                        const d = new Date(e.date + 'T00:00:00');
+                        return { ...e, dateObj: d };
+                    }).filter(e => e.dateObj >= today).sort((a, b) => a.dateObj - b.dateObj);
+
+                    if (upcomingExams.length > 0) {
+                        const next = upcomingExams[0];
+                        const diffTime = next.dateObj - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const dateStr = next.dateObj.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+                        
+                        const isUrgent = diffDays <= 7;
+                        const bgClass = isUrgent ? 'bg-red-500 text-white animate-pulse' : 'bg-white/60 dark:bg-black/40 text-gray-800 dark:text-gray-200';
+                        
+                        // Format: "Exam 1: 5 days left" or "Exam 1: Today"
+                        let daysText = `${diffDays} days left`;
+                        if (diffDays === 0) daysText = "Today";
+                        if (diffDays === 1) daysText = "1 day left";
+
+                        examHtml = `<div class="mt-0.5 px-1 py-0.5 rounded text-[9px] font-bold ${bgClass} truncate text-center leading-tight" title="${next.name} on ${dateStr}">
+                            ${isUrgent ? '!' : ''} ${next.name}: ${daysText}
+                        </div>`;
+                    }
                 }
 
-                card.innerHTML = `<div class="font-bold leading-tight mb-0.5 text-sm truncate pointer-events-none">${event.title}</div><div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[11px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div>${examBadge}<div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>`;
+                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark} justify-between`;
+                card.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
+                // No min-height to allow squishing slightly if needed, but height is % based
+                // h-full on container ensures it fits
+                card.style.height = `${heightPercent}%`;
+                card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
+                
+                card.innerHTML = `
+                    <div class="flex flex-col h-full">
+                        <div class="font-bold leading-none mb-0.5 text-xs truncate pointer-events-none">${event.title}</div>
+                        <div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] leading-none pointer-events-none self-start">${formatTime(event.start)} - ${formatTime(event.end)}</div>
+                        ${examHtml}
+                        <div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs leading-none flex items-center gap-1 pointer-events-none pt-1">${event.loc}</div>
+                    </div>`;
                 container.appendChild(card);
             });
         }
 
-        function calculateFreeTime() {
-            // ... (Standard logic, kept short for brevity but fully functional in logic)
-            updateFreeTimeList([]); 
-        }
-        function updateLiveFeatures() { /* ... */ }
-
-        // --- EXPORT TO WINDOW (Standard Script Init) ---
-        window.onload = function() {
-            initDarkMode();
-            const dateEl = document.getElementById('current-date');
-            if (dateEl) {
-                dateEl.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        // --- INIT ---
+        const init = () => {
+            // Dark Mode
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('sun-icon').classList.remove('hidden');
+                document.getElementById('moon-icon').classList.add('hidden');
             }
             
-            // Check for saved data immediately
-            const saved = localStorage.getItem('alice_assignments');
-            if (saved) {
-                try { assignments = JSON.parse(saved); } catch(e) {}
-            }
-
+            // Date
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            updateTodayClasses(); // Add today's classes to header
             renderSchedule();
             renderCalendar();
-            
-            // Expose globally for HTML to use
-            window.openCourseModal = openCourseModal;
-            window.closeCourseModal = closeCourseModal;
-            window.openAssignmentModal = openAssignmentModal;
-            window.closeAssignmentModal = closeAssignmentModal;
-            window.handleAssignmentSubmit = handleAssignmentSubmit;
-            window.openDayView = openDayView;
-            window.closeDayView = closeDayView;
-            window.deleteAssignmentUI = deleteAssignmentUI;
-            window.changeMonth = changeMonth;
-            
-            // These will be overwritten by module if successful
-            window.db = null; 
-        };
-    </script>
-    
-    <!-- FIREBASE MODULE SCRIPT (RUNS IF SUPPORTED/CONNECTED) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJzNfMfm3GjsAtigoxBgMhBpmcxKdCQqQ",
-            authDomain: "alice-s-schedule-a2f78.firebaseapp.com",
-            projectId: "alice-s-schedule-a2f78",
-            storageBucket: "alice-s-schedule-a2f78.firebasestorage.app",
-            messagingSenderId: "1066052786485",
-            appId: "1:1066052786485:web:6dfc6820677f6cecf7147c"
+            // Removed calculateFreeTime()
+            updateTimerDisplay(); // Init timer visual
         };
 
-        if (firebaseConfig.apiKey) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                const auth = getAuth(app);
-                
-                signInAnonymously(auth).then(() => {
-                    console.log("Firebase Connected");
-                    const q = query(collection(db, "alice_assignments"));
-                    onSnapshot(q, (snapshot) => {
-                        // Update the global variable defined in the standard script
-                        window.assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if (window.renderCalendar) window.renderCalendar();
-                        // Update day view if open
-                        if (document.getElementById('day-view-overlay') && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
-                            const dateEl = document.getElementById('day-view-date');
-                            if (dateEl && dateEl.dataset.date) window.renderDayViewContent(dateEl.dataset.date);
-                        }
-                    });
-                    
-                    // Override global functions to use Cloud
-                    window.addAssignment = async (data) => {
-                        try { await addDoc(collection(db, "alice_assignments"), data); }
-                        catch(e) { console.error(e); window.assignments.push({ id: Date.now().toString(), ...data }); window.renderCalendar(); }
-                    };
-                    window.deleteAssignment = async (id) => {
-                        try { await deleteDoc(doc(db, "alice_assignments", id)); }
-                        catch(e) { console.error(e); }
-                    };
-                }).catch(e => console.log("Auth failed, using local storage", e));
-            } catch(e) { console.log("Firebase init failed, using local storage"); }
-        }
+        // Run Init
+        init();
+
     </script>
 </body>
 </html>
