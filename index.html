@@ -422,6 +422,49 @@
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
         };
 
+        // --- STUDY STATS ---
+        async function fetchStudyStats() {
+            if(!userId || !db) return;
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'));
+                const snapshot = await getDocs(q);
+                let totalMinutes = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.timestamp && data.timestamp.toDate() >= today) {
+                        totalMinutes += data.duration || 0;
+                    }
+                });
+                
+                updateStatsDisplay(totalMinutes);
+            } catch(e) {
+                console.log("Stats fetch error", e);
+            }
+        }
+
+        function updateStatsDisplay(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            const text = h > 0 ? `${h}h ${m}m studied` : `${m} min studied`;
+            const el = document.getElementById('today-stats');
+            if(el) el.innerText = `Today: ${text}`;
+        }
+
+        async function saveStudySession(durationMinutes) {
+            if(!userId || !db || durationMinutes < 1) return;
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'), {
+                    duration: durationMinutes,
+                    timestamp: new Date()
+                });
+                fetchStudyStats();
+            } catch(e) { console.error("Save session error", e); }
+        }
+
         // --- EXPORTED WINDOW FUNCTIONS ---
         window.toggleDarkMode = () => {
             const isDark = document.documentElement.classList.toggle('dark');
