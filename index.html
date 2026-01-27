@@ -373,18 +373,24 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- FIREBASE SETUP ---
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // --- CONSTANTS & CONFIG (DEFINED FIRST TO AVOID REF ERRORS) ---
+        // Global variables for the app
+        let db, auth, user;
+        let appId = 'default-app-id';
+        let assignments = [];
+        let currentCalendarDate = new Date();
+        let assignmentToDelete = null;
+        let timerInterval = null;
+        let timeLeft = 25 * 60;
+        let isTimerRunning = false;
+        let defaultTime = 25 * 60;
+        let timerMode = 'countdown';
+        let stopwatchSeconds = 0;
+        const FULL_DASH_ARRAY = 565.48;
         const START_HOUR = 8;
-        const END_HOUR = 19; // 7 PM
+        const END_HOUR = 19;
         const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
 
+        // --- DATA CONSTANTS (schedule, colors, etc) ---
         const schedule = [
             { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: 'Midterm 1', date: '2025-02-25' }, { name: 'Midterm 2', date: '2025-04-05' }, { name: 'Final', date: '2025-05-14' }] },
             { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
@@ -416,335 +422,19 @@
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
         };
 
-        // --- STATE VARIABLES ---
-        let userId = null;
-        let assignments = []; 
-        let currentCalendarDate = new Date();
-        let assignmentToDelete = null;
-
-        // --- TIMER VARIABLES ---
-        let timerInterval = null;
-        let timeLeft = 25 * 60; // 25 minutes default
-        let isTimerRunning = false;
-        let defaultTime = 25 * 60;
-        let timerMode = 'countdown'; // 'countdown' or 'stopwatch'
-        let stopwatchSeconds = 0;
-        const FULL_DASH_ARRAY = 565.48;
-
-        // --- AUTH & DATA FETCHING ---
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-            }
+        // --- EXPORTED WINDOW FUNCTIONS ---
+        window.toggleDarkMode = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
         };
 
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userId = user.uid;
-                document.getElementById('auth-status').innerText = 'Syncing...';
-                
-                // Firestore Listener
-                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'assignments'));
-                onSnapshot(q, (snapshot) => {
-                    assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderCalendar();
-                    // Update open modals if needed
-                    const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
-                    if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
-                        renderDayViewContent(dayViewDate);
-                    }
-                    document.getElementById('auth-status').innerText = 'Synced';
-                }, (error) => {
-                    console.error("Firestore Error:", error);
-                    document.getElementById('auth-status').innerText = 'Offline Mode';
-                });
-
-                fetchStudyStats(); // Fetch today's study time
-            }
-        });
-
-        // --- STUDY STATS ---
-        async function fetchStudyStats() {
-            if(!userId) return;
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            
-            // Simple query - fetch all and filter in memory
-            try {
-                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'));
-                const snapshot = await getDocs(q);
-                let totalMinutes = 0;
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if(data.timestamp && data.timestamp.toDate() >= today) {
-                        totalMinutes += data.duration || 0;
-                    }
-                });
-                
-                updateStatsDisplay(totalMinutes);
-            } catch(e) {
-                console.log("Stats fetch error", e);
-            }
-        }
-
-        function updateStatsDisplay(minutes) {
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            const text = h > 0 ? `${h}h ${m}m studied` : `${m} min studied`;
-            document.getElementById('today-stats').innerText = `Today: ${text}`;
-        }
-
-        async function saveStudySession(durationMinutes) {
-            if(!userId || durationMinutes < 1) return;
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'), {
-                    duration: durationMinutes,
-                    timestamp: new Date()
-                });
-                fetchStudyStats();
-            } catch(e) { console.error("Save session error", e); }
-        }
-
-        // --- UPDATED DAILY CLASSES FUNCTION ---
-        function updateTodayClasses() {
-            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-            const todayKey = days[new Date().getDay()];
-            // Sort by time: extract HH:MM and convert
-            const todayClasses = schedule.filter(s => s.day === todayKey).sort((a,b) => {
-                const [ah, am] = a.start.split(':').map(Number);
-                const [bh, bm] = b.start.split(':').map(Number);
-                return (ah*60+am) - (bh*60+bm);
-            });
-            
-            const el = document.getElementById('today-classes');
-            if (todayClasses.length > 0) {
-                // Get short titles like CHE 383
-                const names = todayClasses.map(c => c.title.split(' - ')[0]).join(', ');
-                el.innerText = `Today: ${names}`;
-                el.title = todayClasses.map(c => `${c.title} (${c.start})`).join('\n'); // Tooltip
-            } else {
-                el.innerText = "No classes today";
-            }
-        }
-
-        // --- TIMER FUNCTIONS ---
-        function updateTimerDisplay() {
-            let total = 0;
-            if (timerMode === 'countdown') {
-                total = defaultTime;
-            } else {
-                total = 60 * 60; // 60 mins ref for visual ring in stopwatch mode
-            }
-            
-            const current = timerMode === 'countdown' ? timeLeft : stopwatchSeconds;
-            
-            const minutes = Math.floor(current / 60);
-            const seconds = current % 60;
-            const display = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            document.getElementById('timer-display').innerText = display;
-            
-            // Update Circle
-            let rawFraction = 0;
-            if (timerMode === 'countdown') {
-                rawFraction = timeLeft / defaultTime;
-            } else {
-                // For stopwatch, loop ring every 60 mins or just fill up
-                rawFraction = (stopwatchSeconds % 3600) / 3600; 
-                rawFraction = 1 - rawFraction; // inverse for filling up visual if desired, or just spin
-            }
-            
-            const fraction = rawFraction - (1 / total) * (1 - rawFraction);
-            const offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
-            document.getElementById('timer-progress').style.strokeDashoffset = offset;
-
-            // Show/Hide Edit Hint
-            const label = document.getElementById('timer-label');
-            if (label) {
-                if (timerMode === 'countdown' && !isTimerRunning) {
-                    label.classList.remove('hidden');
-                } else {
-                    label.classList.add('hidden');
-                }
-            }
-        }
-
-        window.setTimerMode = (mode) => {
-            timerMode = mode;
-            window.resetTimer(); // Stop and reset whenever switching
-            
-            // Update UI Tabs
-            const tCountdown = document.getElementById('tab-countdown');
-            const tStopwatch = document.getElementById('tab-stopwatch');
-            const controls = document.getElementById('countdown-controls');
-            const display = document.getElementById('timer-display');
-            const label = document.getElementById('timer-label');
-            
-            if (mode === 'countdown') {
-                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
-                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
-                controls.classList.remove('hidden');
-                display.classList.add('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
-                display.classList.remove('cursor-default');
-                label.classList.remove('invisible');
-            } else {
-                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
-                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
-                controls.classList.add('hidden');
-                display.classList.remove('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
-                display.classList.add('cursor-default');
-                label.classList.add('invisible');
-            }
+        window.changeMonth = (delta) => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+            renderCalendar();
         };
-
-        window.adjustTime = (minutes) => {
-            if (isTimerRunning || timerMode !== 'countdown') return;
-            const newTime = defaultTime + (minutes * 60);
-            if (newTime >= 60) { // Minimum 1 minute
-                defaultTime = newTime;
-                timeLeft = newTime;
-                updateTimerDisplay();
-            }
-        };
-
-        window.toggleStudyMode = () => {
-            const overlay = document.getElementById('study-overlay');
-            if (overlay.classList.contains('hidden')) {
-                // Open Focus Mode
-                document.body.classList.add('overflow-hidden'); // Lock scroll
-                overlay.classList.remove('hidden');
-                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-                updateTimerDisplay();
-                fetchStudyStats();
-            } else {
-                // Close Focus Mode
-                document.body.classList.remove('overflow-hidden'); // Unlock scroll
-                
-                // Auto-pause if exiting while running
-                if (isTimerRunning) window.toggleTimer();
-                
-                overlay.classList.add('opacity-0');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
-            }
-        };
-
-        window.startEditingTimer = () => {
-            if (isTimerRunning || timerMode !== 'countdown') return;
-            document.getElementById('timer-display-container').classList.add('hidden');
-            document.getElementById('timer-edit-container').classList.remove('hidden');
-            document.getElementById('timer-edit-container').classList.add('flex');
-            
-            const input = document.getElementById('edit-minutes');
-            input.value = Math.floor(defaultTime / 60);
-            input.focus();
-            
-            // Handle Enter key
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter') window.saveEditedTime();
-                if (e.key === 'Escape') window.cancelEditingTimer();
-            };
-        };
-
-        window.saveEditedTime = () => {
-            const input = document.getElementById('edit-minutes');
-            let mins = parseInt(input.value);
-            if (mins && mins > 0) {
-                defaultTime = mins * 60;
-                timeLeft = defaultTime;
-                updateTimerDisplay();
-            }
-            window.cancelEditingTimer();
-        };
-
-        window.cancelEditingTimer = () => {
-            document.getElementById('timer-edit-container').classList.add('hidden');
-            document.getElementById('timer-edit-container').classList.remove('flex');
-            document.getElementById('timer-display-container').classList.remove('hidden');
-        };
-
-        window.toggleTimer = () => {
-            const btn = document.getElementById('timer-btn');
-            if (isTimerRunning) {
-                // Pause Logic
-                clearInterval(timerInterval);
-                isTimerRunning = false;
-                btn.innerHTML = `Start`;
-                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-                
-                // If stopwatch paused, save progress immediately? Or wait for reset?
-                // Let's save on pause for stopwatch to be safe
-                if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
-                    saveStudySession(Math.floor(stopwatchSeconds / 60));
-                    stopwatchSeconds = 0; // Reset after save or keep? Usually reset. 
-                    // Actually, let's NOT reset on pause, user might resume.
-                    // Complex logic: Only save on RESET or EXIT. 
-                    // Reverting: We will only save on explicit finish or reset.
-                }
-            } else {
-                // Start Logic
-                isTimerRunning = true;
-                btn.innerHTML = `Pause`;
-                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                btn.classList.add('bg-red-500', 'hover:bg-red-600');
-                
-                // Hide edit hint when running
-                const label = document.getElementById('timer-label');
-                if (label) label.classList.add('invisible');
-                
-                timerInterval = setInterval(() => {
-                    if (timerMode === 'countdown') {
-                        if (timeLeft > 0) {
-                            timeLeft--;
-                            updateTimerDisplay();
-                        } else {
-                            // Finished
-                            clearInterval(timerInterval);
-                            isTimerRunning = false;
-                            saveStudySession(Math.floor(defaultTime / 60));
-                            timeLeft = defaultTime;
-                            updateTimerDisplay();
-                            btn.innerHTML = `Start`;
-                            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-                            alert("Session Complete!");
-                        }
-                    } else {
-                        // Stopwatch
-                        stopwatchSeconds++;
-                        updateTimerDisplay();
-                    }
-                }, 1000);
-            }
-        };
-
-        window.resetTimer = () => {
-            clearInterval(timerInterval);
-            isTimerRunning = false;
-            
-            // If stopwatch had data, save it before resetting
-            if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
-                saveStudySession(Math.floor(stopwatchSeconds / 60));
-            }
-
-            timeLeft = defaultTime;
-            stopwatchSeconds = 0;
-            updateTimerDisplay();
-            
-            const btn = document.getElementById('timer-btn');
-            btn.innerHTML = `Start`;
-            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-        };
-
+        
         window.openAssignmentModal = (dateStr) => {
             const modal = document.getElementById('assignment-modal-overlay');
             document.getElementById('modal-form-title').innerText = "Add Assignment";
@@ -798,10 +488,33 @@
                 }, 200);
             }
         };
-
+        
         window.handleAssignmentSubmit = async (e) => {
             e.preventDefault();
-            if (!userId) return; // Simple check
+            
+            // If offline, just mimic adding
+            if (!db || !auth) {
+                 const id = document.getElementById('task-id').value;
+                 const data = {
+                    id: id || Date.now().toString(),
+                    title: document.getElementById('task-title').value,
+                    course: document.getElementById('task-course').value,
+                    type: document.getElementById('task-type').value,
+                    date: document.getElementById('task-date').value,
+                    notes: document.getElementById('task-notes').value
+                 };
+                 if(id) {
+                    assignments = assignments.map(a => a.id === id ? data : a);
+                 } else {
+                    assignments.push(data);
+                 }
+                 renderCalendar();
+                 window.closeAssignmentModal(null, true);
+                 alert("Saved locally (Offline Mode)");
+                 return;
+            }
+
+            if (!user) return; // Wait for auth
 
             const id = document.getElementById('task-id').value;
             const title = document.getElementById('task-title').value;
@@ -814,12 +527,12 @@
                 try {
                     if (id) {
                         // Update existing
-                        await updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'assignments', id), {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'assignments', id), {
                             title, course, type, date, notes
                         });
                     } else {
                         // Create new
-                        await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'assignments'), {
+                        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'assignments'), {
                             title, course, type, date, notes, createdAt: new Date()
                         });
                     }
@@ -852,8 +565,7 @@
             modal.querySelector('.modal-content').classList.add('translate-y-4', 'opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 200);
         };
-
-        // --- DELETE MODAL HANDLERS ---
+        
         window.openDeleteModal = (id) => {
             assignmentToDelete = id;
             const modal = document.getElementById('delete-modal-overlay');
@@ -877,14 +589,28 @@
         };
 
         window.confirmDelete = async () => {
-            if (assignmentToDelete && userId) {
+            // Offline mode fallback
+            if (!db || !user) {
+                if(assignmentToDelete) {
+                    assignments = assignments.filter(a => a.id !== assignmentToDelete);
+                    renderCalendar();
+                    window.closeDeleteModal();
+                    if(document.getElementById('day-view-overlay').classList.contains('hidden') === false) {
+                        const dateStr = document.getElementById('day-view-date').dataset.date;
+                        renderDayViewContent(dateStr);
+                    }
+                }
+                return;
+            }
+
+            if (assignmentToDelete && user) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'assignments', assignmentToDelete));
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'assignments', assignmentToDelete));
                     window.closeDeleteModal();
                 } catch (e) { console.error(e); }
             }
         };
-
+        
         window.openCourseModal = (eventDataStr) => {
             const data = JSON.parse(decodeURIComponent(eventDataStr));
             const modal = document.getElementById('course-modal-overlay');
@@ -954,7 +680,217 @@
             }
         };
 
-        // --- RENDERING FUNCTIONS ---
+        // --- TIMER FUNCTIONS ---
+        function updateTimerDisplay() {
+            let total = 0;
+            if (timerMode === 'countdown') {
+                total = defaultTime;
+            } else {
+                total = 60 * 60; 
+            }
+            
+            const current = timerMode === 'countdown' ? timeLeft : stopwatchSeconds;
+            
+            const minutes = Math.floor(current / 60);
+            const seconds = current % 60;
+            const display = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            document.getElementById('timer-display').innerText = display;
+            
+            // Update Circle
+            let rawFraction = 0;
+            if (timerMode === 'countdown') {
+                rawFraction = timeLeft / defaultTime;
+            } else {
+                // For stopwatch, loop ring every 60 mins
+                rawFraction = (stopwatchSeconds % 3600) / 3600; 
+                rawFraction = 1 - rawFraction; 
+            }
+            
+            const fraction = rawFraction - (1 / total) * (1 - rawFraction);
+            const offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
+            document.getElementById('timer-progress').style.strokeDashoffset = offset;
+
+            // Show/Hide Edit Hint
+            const label = document.getElementById('timer-label');
+            if (label) {
+                if (timerMode === 'countdown' && !isTimerRunning) {
+                    label.classList.remove('hidden');
+                } else {
+                    label.classList.add('hidden');
+                }
+            }
+        }
+        
+        window.setTimerMode = (mode) => {
+            timerMode = mode;
+            window.resetTimer(); 
+            
+            const tCountdown = document.getElementById('tab-countdown');
+            const tStopwatch = document.getElementById('tab-stopwatch');
+            const controls = document.getElementById('countdown-controls');
+            const display = document.getElementById('timer-display');
+            const label = document.getElementById('timer-label');
+            
+            if (mode === 'countdown') {
+                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
+                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                controls.classList.remove('hidden');
+                display.classList.add('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
+                display.classList.remove('cursor-default');
+                label.classList.remove('invisible');
+            } else {
+                tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
+                tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                controls.classList.add('hidden');
+                display.classList.remove('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
+                display.classList.add('cursor-default');
+                label.classList.add('invisible');
+            }
+        };
+
+        window.adjustTime = (minutes) => {
+            if (isTimerRunning || timerMode !== 'countdown') return;
+            const newTime = defaultTime + (minutes * 60);
+            if (newTime >= 60) {
+                defaultTime = newTime;
+                timeLeft = newTime;
+                updateTimerDisplay();
+            }
+        };
+
+        window.toggleStudyMode = () => {
+            const overlay = document.getElementById('study-overlay');
+            if (overlay.classList.contains('hidden')) {
+                document.body.classList.add('overflow-hidden');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                updateTimerDisplay();
+                fetchStudyStats();
+            } else {
+                document.body.classList.remove('overflow-hidden');
+                if (isTimerRunning) window.toggleTimer();
+                
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        };
+        
+        window.startEditingTimer = () => {
+            if (isTimerRunning || timerMode !== 'countdown') return;
+            document.getElementById('timer-display-container').classList.add('hidden');
+            document.getElementById('timer-edit-container').classList.remove('hidden');
+            document.getElementById('timer-edit-container').classList.add('flex');
+            
+            const input = document.getElementById('edit-minutes');
+            input.value = Math.floor(defaultTime / 60);
+            input.focus();
+            
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') window.saveEditedTime();
+                if (e.key === 'Escape') window.cancelEditingTimer();
+            };
+        };
+
+        window.saveEditedTime = () => {
+            const input = document.getElementById('edit-minutes');
+            let mins = parseInt(input.value);
+            if (mins && mins > 0) {
+                defaultTime = mins * 60;
+                timeLeft = defaultTime;
+                updateTimerDisplay();
+            }
+            window.cancelEditingTimer();
+        };
+
+        window.cancelEditingTimer = () => {
+            document.getElementById('timer-edit-container').classList.add('hidden');
+            document.getElementById('timer-edit-container').classList.remove('flex');
+            document.getElementById('timer-display-container').classList.remove('hidden');
+        };
+
+        window.toggleTimer = () => {
+            const btn = document.getElementById('timer-btn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerHTML = `Start`;
+                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                
+                if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
+                    saveStudySession(Math.floor(stopwatchSeconds / 60));
+                }
+            } else {
+                isTimerRunning = true;
+                btn.innerHTML = `Pause`;
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                btn.classList.add('bg-red-500', 'hover:bg-red-600');
+                
+                const label = document.getElementById('timer-label');
+                if (label) label.classList.add('invisible');
+                
+                timerInterval = setInterval(() => {
+                    if (timerMode === 'countdown') {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            clearInterval(timerInterval);
+                            isTimerRunning = false;
+                            saveStudySession(Math.floor(defaultTime / 60));
+                            timeLeft = defaultTime;
+                            updateTimerDisplay();
+                            btn.innerHTML = `Start`;
+                            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                            alert("Session Complete!");
+                        }
+                    } else {
+                        stopwatchSeconds++;
+                        updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+        };
+
+        window.resetTimer = () => {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            
+            if (timerMode === 'stopwatch' && stopwatchSeconds > 60) {
+                saveStudySession(Math.floor(stopwatchSeconds / 60));
+            }
+
+            timeLeft = defaultTime;
+            stopwatchSeconds = 0;
+            updateTimerDisplay();
+            
+            const btn = document.getElementById('timer-btn');
+            btn.innerHTML = `Start`;
+            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        };
+
+        // --- INTERNAL FUNCTIONS ---
+        function updateTodayClasses() {
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const todayKey = days[new Date().getDay()];
+            const todayClasses = schedule.filter(s => s.day === todayKey).sort((a,b) => {
+                const [ah, am] = a.start.split(':').map(Number);
+                const [bh, bm] = b.start.split(':').map(Number);
+                return (ah*60+am) - (bh*60+bm);
+            });
+            
+            const el = document.getElementById('today-classes');
+            if (todayClasses.length > 0) {
+                const names = todayClasses.map(c => c.title.split(' - ')[0]).join(', ');
+                el.innerText = `Today: ${names}`;
+                el.title = todayClasses.map(c => `${c.title} (${c.start})`).join('\n');
+            } else {
+                el.innerText = "No classes today";
+            }
+        }
+        
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             if (!grid) return;
@@ -1000,7 +936,7 @@
         }
 
         function renderDayViewContent(dateStr) {
-            window.renderDayViewContent = renderDayViewContent; // ensure global avail for refresh
+            window.renderDayViewContent = renderDayViewContent; 
             const list = document.getElementById('day-view-list');
             if (!list) return;
             list.innerHTML = '';
@@ -1123,29 +1059,78 @@
                 container.appendChild(card);
             });
         }
+        
+        // --- FIREBASE INIT ---
+        async function initApp() {
+             try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    // Auth logic
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
 
+                    onAuthStateChanged(auth, (u) => {
+                        user = u;
+                        if (user) {
+                            document.getElementById('auth-status').innerText = 'Syncing...';
+                            setupFirestoreListeners();
+                            fetchStudyStats();
+                        }
+                    });
+                } else {
+                    throw new Error("Firebase config not found");
+                }
+            } catch (e) {
+                console.warn("Running in offline mode:", e);
+                document.getElementById('auth-status').innerText = "Offline Mode";
+                document.getElementById('auth-status').classList.remove('hidden');
+            }
+            
+            // Initial Render
+            init();
+        }
+
+        function setupFirestoreListeners() {
+            if (!user || !db) return;
+            const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'assignments'));
+            onSnapshot(q, (snapshot) => {
+                assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCalendar();
+                const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
+                if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
+                    renderDayViewContent(dayViewDate);
+                }
+                document.getElementById('auth-status').innerText = 'Synced';
+            }, (error) => {
+                 console.error("Firestore Error", error);
+                 document.getElementById('auth-status').innerText = 'Offline Mode';
+            });
+        }
+        
         // --- INIT ---
         const init = () => {
-            // Dark Mode
             if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 document.getElementById('sun-icon').classList.remove('hidden');
                 document.getElementById('moon-icon').classList.add('hidden');
             }
-            
-            // Date
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
-            updateTodayClasses(); // Add today's classes to header
+            updateTodayClasses();
             renderSchedule();
             renderCalendar();
-            // Removed calculateFreeTime()
-            updateTimerDisplay(); // Init timer visual
+            updateTimerDisplay();
         };
-
-        // Run Init
-        init();
-
+        
+        initApp();
     </script>
 </body>
 </html>
