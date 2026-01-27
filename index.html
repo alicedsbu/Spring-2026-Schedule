@@ -55,7 +55,7 @@
         <div>
             <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">My Spring Schedule</h1>
             <div class="flex items-center gap-2 mt-0.5 text-sm">
-                <p id="current-date" class="font-medium text-indigo-600 dark:text-indigo-400"></p>
+                <p id="current-date" class="font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
                 <span class="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
                 <p id="today-classes" class="text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-md hidden sm:block">Loading...</p>
             </div>
@@ -373,16 +373,9 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- FIREBASE SETUP ---
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // --- CONSTANTS & CONFIG (DEFINED FIRST TO AVOID REF ERRORS) ---
+        // --- CONSTANTS & DATA (Safe) ---
         const START_HOUR = 8;
-        const END_HOUR = 19; // 7 PM
+        const END_HOUR = 19;
         const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
 
         const schedule = [
@@ -431,8 +424,30 @@
         let stopwatchSeconds = 0;
         const FULL_DASH_ARRAY = 565.48;
 
-        // --- AUTH & DATA FETCHING ---
+        // --- FIREBASE INIT (SAFE) ---
+        let db, auth, appId;
+        
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            } else {
+                console.warn("Firebase config missing. Running offline.");
+                document.getElementById('auth-status').innerText = "Offline Demo Mode";
+                document.getElementById('auth-status').classList.remove('hidden');
+            }
+        } catch (e) {
+             console.error("Firebase Init Error:", e);
+             document.getElementById('auth-status').innerText = "Error Loading DB";
+             document.getElementById('auth-status').classList.remove('hidden');
+        }
+
+        // --- AUTH LOGIC (SAFE) ---
         const initAuth = async () => {
+            if (!auth) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -444,40 +459,38 @@
             }
         };
 
-        initAuth();
+        if (auth) {
+            initAuth();
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('auth-status').innerText = 'Syncing...';
+                    
+                    const q = query(collection(db, 'artifacts', appId, 'users', userId, 'assignments'));
+                    onSnapshot(q, (snapshot) => {
+                        assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderCalendar();
+                        const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
+                        if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
+                            renderDayViewContent(dayViewDate);
+                        }
+                        document.getElementById('auth-status').innerText = 'Synced';
+                    }, (error) => {
+                        console.error("Firestore Error:", error);
+                        document.getElementById('auth-status').innerText = 'Offline Mode';
+                    });
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userId = user.uid;
-                document.getElementById('auth-status').innerText = 'Syncing...';
-                
-                // Firestore Listener
-                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'assignments'));
-                onSnapshot(q, (snapshot) => {
-                    assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderCalendar();
-                    // Update open modals if needed
-                    const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
-                    if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
-                        renderDayViewContent(dayViewDate);
-                    }
-                    document.getElementById('auth-status').innerText = 'Synced';
-                }, (error) => {
-                    console.error("Firestore Error:", error);
-                    document.getElementById('auth-status').innerText = 'Offline Mode';
-                });
-
-                fetchStudyStats(); // Fetch today's study time
-            }
-        });
+                    fetchStudyStats(); 
+                }
+            });
+        }
 
         // --- STUDY STATS ---
         async function fetchStudyStats() {
-            if(!userId) return;
+            if(!userId || !db) return;
             const today = new Date();
             today.setHours(0,0,0,0);
             
-            // Simple query - fetch all and filter in memory
             try {
                 const q = query(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'));
                 const snapshot = await getDocs(q);
@@ -504,7 +517,7 @@
         }
 
         async function saveStudySession(durationMinutes) {
-            if(!userId || durationMinutes < 1) return;
+            if(!userId || !db || durationMinutes < 1) return;
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'), {
                     duration: durationMinutes,
@@ -514,7 +527,7 @@
             } catch(e) { console.error("Save session error", e); }
         }
 
-        // --- UPDATED DAILY CLASSES FUNCTION (RESTORED) ---
+        // --- UPDATED DAILY CLASSES FUNCTION ---
         function updateTodayClasses() {
             const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             const todayKey = days[new Date().getDay()];
@@ -1119,13 +1132,7 @@
                 card.style.height = `${heightPercent}%`;
                 card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
                 
-                card.innerHTML = `
-                    <div class="flex flex-col h-full">
-                        <div class="font-bold leading-none mb-0.5 text-xs truncate pointer-events-none">${event.title}</div>
-                        <div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] leading-none pointer-events-none self-start">${formatTime(event.start)} - ${formatTime(event.end)}</div>
-                        ${examHtml}
-                        <div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs leading-none flex items-center gap-1 pointer-events-none pt-1">${event.loc}</div>
-                    </div>`;
+                card.innerHTML = `<div class="font-bold leading-tight mb-0.5 text-xs truncate pointer-events-none">${event.title}</div><div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div>${examHtml}<div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>`;
                 container.appendChild(card);
             });
         }
