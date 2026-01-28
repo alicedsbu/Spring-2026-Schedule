@@ -31,11 +31,10 @@
         .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; }
         
         .event-card { transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; z-index: 10; }
-        /* Adjusted hover z-index to be lower than sticky headers (40+) */
         .event-card:hover { transform: scale(1.02); z-index: 30; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); }
         
-        #current-time-line { pointer-events: none; transition: top 0.5s ease-in-out; z-index: 25; }
-        #current-time-line::before { content: ''; position: absolute; left: -6px; top: -5px; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; }
+        #static-current-time-line, #weekly-current-time-line { pointer-events: none; transition: top 0.5s ease-in-out; z-index: 25; }
+        #static-current-time-line::before, #weekly-current-time-line::before { content: ''; position: absolute; left: -6px; top: -5px; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; }
         
         #study-overlay, #course-modal-overlay, #assignment-modal-overlay, #day-view-overlay, #delete-modal-overlay { transition: opacity 0.2s ease-in-out; }
         .modal-open .modal-content { transform: scale(1); opacity: 1; }
@@ -83,24 +82,22 @@
     <!-- Main Content -->
     <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8 mt-4 pb-12">
         
-        <!-- Visual Schedule Section -->
+        <!-- SECTION 1: STATIC SCHEDULE (Weekly Overview - Classes) -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 shrink-0">
-            <!-- Header for Schedule Box -->
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center relative z-40 shrink-0 rounded-t-xl">
                 <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Weekly Overview
+                    Weekly Overview (Classes)
                 </h2>
-                <div id="live-indicator-status" class="text-xs font-medium text-red-500 flex items-center gap-1 animate-pulse"><span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</div>
+                <div class="text-xs font-medium text-red-500 flex items-center gap-1 animate-pulse"><span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</div>
             </div>
             
-            <!-- Full Height Schedule -->
             <div class="overflow-x-auto relative scroll-smooth rounded-b-xl border-t border-gray-100 dark:border-gray-700">
                 <div class="min-w-[800px] relative flex">
                     <!-- Left Column (Times) -->
                     <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-[60] transition-colors duration-200">
                         <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-[60] border-b border-gray-100 dark:border-gray-700 shadow-sm"></div> 
-                        <div id="time-labels" class="relative" style="height: 1188px;"></div>
+                        <div id="static-time-labels" class="relative" style="height: 1512px;"></div>
                     </div>
 
                     <!-- Right Section (Grid) -->
@@ -113,24 +110,92 @@
                             <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Thu</div>
                             <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Fri</div>
                         </div>
-                        <div class="grid grid-cols-5 h-[1188px] relative" id="schedule-container">
-                            <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(11,1fr)] w-full h-full z-0">
-                                <!-- Grid Lines -->
-                                <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
+                        <div class="grid grid-cols-5 h-[1512px] relative" id="static-schedule-container">
+                            <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(14,1fr)] w-full h-full z-0">
+                                <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
                             </div>
-                            <div id="current-time-line" class="absolute w-full border-t-2 border-red-500 z-25 hidden"></div>
-                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-mon"></div>
-                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-tue"></div>
-                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-wed"></div>
-                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-thu"></div>
-                            <div class="relative h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="col-fri"></div>
+                            <div id="static-current-time-line" class="absolute w-full border-t-2 border-red-500 z-25 hidden"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="static-col-mon"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="static-col-tue"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="static-col-wed"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="static-col-thu"></div>
+                            <div class="relative h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="static-col-fri"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- CALENDAR SECTION -->
+        <!-- SECTION 2: WEEKLY CALENDAR VIEW (New Section) -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 shrink-0">
+            <!-- Calendar Header with Controls -->
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex flex-wrap justify-between items-center gap-4 relative z-40 shrink-0 rounded-t-xl">
+                <div class="flex items-center gap-6">
+                    <h2 id="week-view-title" class="text-2xl font-bold text-gray-900 dark:text-white">January 2026</h2>
+                    <div class="flex items-center bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-1">
+                        <button onclick="window.changeWeek(-1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+                        <button onclick="window.goToToday()" class="px-4 py-1 text-sm font-bold text-gray-700 dark:text-gray-200 border-x border-gray-200 dark:border-gray-600 mx-1">Today</button>
+                        <button onclick="window.changeWeek(1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Full Height Schedule Grid -->
+            <div class="overflow-x-auto relative scroll-smooth rounded-b-xl border-t border-gray-100 dark:border-gray-700">
+                <div class="min-w-[800px] relative flex">
+                    <!-- Left Column (Times) -->
+                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-[60] transition-colors duration-200">
+                        <!-- Top-Left Corner Spacer -->
+                        <div class="h-28 bg-gray-50 dark:bg-gray-850 sticky top-0 z-[60] border-b border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-end pb-2 pr-2">
+                            <span class="text-[10px] text-gray-400 font-medium text-right">GMT-05</span>
+                        </div> 
+                        <div id="weekly-time-labels" class="relative" style="height: 1512px;"></div>
+                    </div>
+
+                    <!-- Right Section (Grid) -->
+                    <div class="flex-1 relative bg-white dark:bg-gray-800 transition-colors duration-200">
+                        
+                        <!-- Header Group (Sticky) -->
+                        <div class="sticky top-0 z-[50] shadow-sm bg-gray-50 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700">
+                            <!-- Days Row -->
+                            <div id="week-header-row" class="grid grid-cols-7 h-16 items-center"></div>
+                            
+                            <!-- All Day / Tasks Row -->
+                            <div class="grid grid-cols-7 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[3rem]">
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-0"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-1"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-2"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-3"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-4"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-5"></div>
+                                <div class="border-r border-gray-100 dark:border-gray-700 p-1" id="weekly-task-col-6"></div>
+                            </div>
+                        </div>
+
+                        <!-- Main Time Grid -->
+                        <div class="grid grid-cols-7 h-[1512px] relative" id="weekly-schedule-container">
+                            <div class="absolute inset-0 pointer-events-none grid grid-rows-[repeat(14,1fr)] w-full h-full z-0">
+                                <div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div><div class="border-b border-gray-100 dark:border-gray-700 w-full"></div>
+                            </div>
+                            <div id="weekly-current-time-line" class="absolute w-full border-t-2 border-red-500 z-25 hidden"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-0"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-1"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-2"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-3"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-4"></div>
+                            <div class="relative border-r border-gray-100 dark:border-gray-700 h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-5"></div>
+                            <div class="relative h-full hover:bg-gray-50/30 dark:hover:bg-gray-700/30 transition-colors" id="weekly-col-6"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: MONTHLY CALENDAR SECTION -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200 shrink-0">
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex flex-wrap justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-4">
@@ -138,7 +203,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Assignments Calendar
+                        Assignments Calendar (Monthly)
                     </h2>
                     <div class="flex items-center bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-1">
                         <button onclick="window.changeMonth(-1)" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400">
@@ -204,6 +269,7 @@
                                 <option value="SBU 102">SBU 102</option>
                                 <option value="PHY 132">PHY 132</option>
                                 <option value="PHY 134">PHY 134</option>
+                                <option value="Work">Work</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -215,12 +281,23 @@
                                 <option value="Lab">Lab</option>
                                 <option value="Paper">Paper</option>
                                 <option value="Event">Event</option>
+                                <option value="Work">Work</option>
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Due Date</label>
-                        <input type="date" id="task-date" required class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Date</label>
+                            <input type="date" id="task-date" required class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Start</label>
+                            <input type="time" id="task-start-time" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">End</label>
+                            <input type="time" id="task-end-time" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes (Optional)</label>
@@ -320,9 +397,7 @@
 
         <!-- Fullscreen Toggle Button -->
         <button onclick="window.toggleFullScreen()" id="fullscreen-btn" class="absolute top-6 left-6 z-50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Toggle Full Screen">
-            <!-- Enter Fullscreen Icon (Arrows out) -->
             <svg id="icon-enter-fullscreen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-            <!-- Exit Fullscreen Icon (Arrows in) -->
             <svg id="icon-exit-fullscreen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H6m0 0v4m0-4l5 5m7-5h4m0 0v4m0-4l-5 5m-7-5h-4m4 0V6m0 4L5 5m14 5h-4m0 0V6m0 4l5-5" /></svg>
         </button>
 
@@ -349,8 +424,6 @@
                 
                 <!-- Inner Container for Centered Content -->
                 <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
-                    
-                    <!-- Display Time (Click to Edit) -->
                     <div id="timer-display-container" class="text-center group-edit">
                         <div id="timer-display" 
                              onclick="window.startEditingTimer()" 
@@ -361,7 +434,6 @@
                         <p id="timer-label" class="text-xs text-gray-400 font-medium uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</p>
                     </div>
 
-                    <!-- Input Field (Hidden by default) -->
                     <div id="timer-edit-container" class="hidden flex-col items-center gap-2">
                         <div class="flex items-center justify-center gap-2">
                             <input type="number" id="edit-minutes" class="w-24 bg-transparent border-b-2 border-indigo-500 text-5xl font-mono text-center text-gray-900 dark:text-white focus:outline-none" min="1" max="180" placeholder="25">
@@ -373,7 +445,6 @@
                         </div>
                     </div>
 
-                    <!-- +/- Controls (Absolute to not affect centering) -->
                     <div id="countdown-controls" class="absolute bottom-16 flex gap-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
                         <button onclick="window.adjustTime(-5)" class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center shadow-sm transition-transform hover:scale-110 active:scale-95" title="-5 min">
                             <span class="font-bold text-lg">-5</span>
@@ -405,6 +476,7 @@
         let appId = 'default-app-id';
         let assignments = [];
         let currentCalendarDate = new Date();
+        let currentWeekStart = new Date(); // State for Weekly View
         let assignmentToDelete = null;
         let timerInterval = null;
         let scheduleInterval = null;
@@ -416,7 +488,7 @@
         
         const FULL_DASH_ARRAY = 565.48;
         const START_HOUR = 8;
-        const END_HOUR = 19;
+        const END_HOUR = 22;
         const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
 
         // --- DATA CONSTANTS (schedule, colors, etc) ---
@@ -437,7 +509,7 @@
         const rawColors = {
             'CHE 383': '#059669', 'CHE 331': '#2563eb', 'AMS 161': '#e11d48',
             'WRT 102': '#d97706', 'SBU 102': '#c026d3', 'PHY 132': '#0891b2',
-            'PHY 134': '#7c3aed', 'Other': '#4b5563'
+            'PHY 134': '#7c3aed', 'Work': '#0d9488', 'Other': '#4b5563'
         };
 
         const colors = {
@@ -448,11 +520,9 @@
             'SBU 102': { light: 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200', dark: 'dark:bg-purple-900/60 dark:border-purple-700 dark:text-purple-100 dark:hover:bg-purple-800/60' },
             'PHY 132': { light: 'bg-orange-100 border-orange-300 text-orange-900 hover:bg-orange-200', dark: 'dark:bg-orange-900/60 dark:border-orange-700 dark:text-orange-100 dark:hover:bg-orange-800/60' },
             'PHY 134': { light: 'bg-pink-100 border-pink-300 text-pink-900 hover:bg-pink-200', dark: 'dark:bg-pink-900/60 dark:border-pink-700 dark:text-pink-100 dark:hover:bg-pink-800/60' },
+            'Work': { light: 'bg-teal-100 border-teal-300 text-teal-900 hover:bg-teal-200', dark: 'dark:bg-teal-900/60 dark:border-teal-700 dark:text-teal-100 dark:hover:bg-teal-800/60' },
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
         };
-
-        // --- AUTH & KEY FUNCTIONS ---
-        // Removed Access Key logic for seamless sync
 
         // --- STUDY STATS ---
         async function fetchStudyStats() {
@@ -511,6 +581,21 @@
             currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
             renderCalendar();
         };
+
+        // --- WEEK VIEW NAV ---
+        window.changeWeek = (delta) => {
+            currentWeekStart.setDate(currentWeekStart.getDate() + (delta * 7));
+            renderWeeklyView();
+        };
+
+        window.goToToday = () => {
+            const today = new Date();
+            // Find start of current week (Sunday)
+            const day = today.getDay();
+            const diff = today.getDate() - day; // adjust when day is sunday
+            currentWeekStart = new Date(today.setDate(diff));
+            renderWeeklyView();
+        };
         
         window.openAssignmentModal = (dateStr) => {
             const modal = document.getElementById('assignment-modal-overlay');
@@ -543,6 +628,17 @@
             document.getElementById('task-course').value = task.course;
             document.getElementById('task-type').value = task.type;
             document.getElementById('task-date').value = task.date;
+            document.getElementById('task-start-time').value = task.time || ""; 
+            
+            // Calculate End Time for existing tasks if missing
+            let endTimeVal = task.endTime || "";
+            if (!endTimeVal && task.time && task.duration) {
+                const [h, m] = task.time.split(':').map(Number);
+                const date = new Date();
+                date.setHours(h, m + parseInt(task.duration));
+                endTimeVal = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+            document.getElementById('task-end-time').value = endTimeVal;
             document.getElementById('task-notes').value = task.notes || "";
 
             modal.classList.remove('hidden');
@@ -569,6 +665,18 @@
         window.handleAssignmentSubmit = async (e) => {
             e.preventDefault();
             
+            const startTime = document.getElementById('task-start-time').value;
+            const endTime = document.getElementById('task-end-time').value;
+            let duration = 60; // default 60 min if only start time provided
+
+            if (startTime && endTime) {
+                const [sh, sm] = startTime.split(':').map(Number);
+                const [eh, em] = endTime.split(':').map(Number);
+                duration = ((eh * 60) + em) - ((sh * 60) + sm);
+                // Handle edge case where end time is earlier (overnight), though simple logic usually assumes same day
+                if (duration < 0) duration = 60; 
+            }
+
             // If offline, just mimic adding to local state + localStorage
             if (!db || !auth) {
                  const id = document.getElementById('task-id').value;
@@ -578,6 +686,9 @@
                     course: document.getElementById('task-course').value,
                     type: document.getElementById('task-type').value,
                     date: document.getElementById('task-date').value,
+                    time: startTime,
+                    endTime: endTime,
+                    duration: duration,
                     notes: document.getElementById('task-notes').value
                  };
                  
@@ -589,6 +700,7 @@
                  
                  localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                  renderCalendar();
+                 renderWeeklyView();
                  window.closeAssignmentModal(null, true);
                  return;
             }
@@ -604,15 +716,17 @@
 
             if (title && date) {
                 try {
+                    const docData = {
+                        title, course, type, date, time: startTime, endTime, duration, notes
+                    };
+                    
                     if (id) {
                         // Update existing using Public Shared Path
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assignments', id), {
-                            title, course, type, date, notes
-                        });
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assignments', id), docData);
                     } else {
                         // Create new using Public Shared Path
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'assignments'), {
-                            title, course, type, date, notes, createdAt: new Date()
+                            ...docData, createdAt: new Date()
                         });
                     }
                     window.closeAssignmentModal(null, true);
@@ -674,6 +788,7 @@
                     assignments = assignments.filter(a => a.id !== assignmentToDelete);
                     localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                     renderCalendar();
+                    renderWeeklyView();
                     window.closeDeleteModal();
                     if(document.getElementById('day-view-overlay').classList.contains('hidden') === false) {
                         const dateStr = document.getElementById('day-view-date').dataset.date;
@@ -987,110 +1102,180 @@
             }
         }
         
-        function renderCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            if (!grid) return;
-            const monthYear = document.getElementById('calendar-month-year');
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            const today = new Date();
-            
-            monthYear.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
-            grid.innerHTML = '';
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            for (let i = 0; i < firstDay; i++) {
-                const div = document.createElement('div');
-                div.className = "h-28 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg";
-                grid.appendChild(div);
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const div = document.createElement('div');
-                const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-                
-                div.className = `h-28 bg-white dark:bg-gray-800 border ${isToday ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-100 dark:border-gray-700'} rounded-lg p-1.5 flex flex-col relative group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer`;
-                div.onclick = () => window.openDayView(dateStr);
-
-                let html = `<span class="text-xs font-semibold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}">${day}</span>`;
-                html += `<button onclick="event.stopPropagation(); window.openAssignmentModal('${dateStr}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 bg-indigo-50 dark:bg-indigo-900 rounded text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition-opacity z-10" title="Add Task"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg></button>`;
-                html += `<div class="mt-1 flex flex-col gap-1 overflow-y-auto no-scrollbar" style="max-height: 5rem;">`;
-                
-                const dayAssignments = assignments.filter(a => a.date === dateStr);
-                dayAssignments.forEach(a => {
-                    let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
-                    const color = rawColors[colorKey] || rawColors['Other'];
-                    html += `<div class="text-[10px] px-1.5 py-0.5 rounded text-white truncate shadow-sm" style="background-color: ${color}">${a.course.split(' ')[0]} - ${a.title}</div>`;
-                });
-                html += `</div>`;
-                div.innerHTML = html;
-                grid.appendChild(div);
-            }
-        }
-
-        function renderDayViewContent(dateStr) {
-            window.renderDayViewContent = renderDayViewContent; 
-            const list = document.getElementById('day-view-list');
-            if (!list) return;
-            list.innerHTML = '';
-            
-            const dayAssignments = assignments.filter(a => a.date === dateStr);
-            if (dayAssignments.length === 0) {
-                list.innerHTML = `<div class="flex flex-col items-center justify-center py-10 text-gray-400"><p>No tasks for this day.</p><button onclick="window.closeDayView(); window.openAssignmentModal('${dateStr}')" class="mt-4 text-indigo-600 hover:underline text-sm">Add a task</button></div>`;
-                return;
-            }
-
-            dayAssignments.forEach(a => {
-                let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
-                const color = rawColors[colorKey] || rawColors['Other'];
-                const item = document.createElement('div');
-                item.className = "flex gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 relative group";
-                item.innerHTML = `
-                    <div class="w-1.5 self-stretch rounded-full" style="background-color: ${color}"></div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <div><span class="text-xs font-bold px-2 py-0.5 rounded text-white mb-1 inline-block" style="background-color: ${color}">${a.course}</span><span class="text-xs font-medium text-gray-500 uppercase ml-2 tracking-wide">${a.type}</span></div>
-                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="window.editAssignmentUI('${a.id}')" class="text-gray-400 hover:text-indigo-600 p-1" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                </button>
-                                <button onclick="window.openDeleteModal('${a.id}')" class="text-gray-400 hover:text-red-500 p-1" title="Delete">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <h4 class="font-bold text-gray-900 dark:text-white text-lg mt-1">${a.title}</h4>
-                        ${a.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-750 p-3 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-pre-wrap">${a.notes}</div>` : ''}
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
         function updateCurrentTimeLine() {
             const now = new Date();
             const hour = now.getHours();
             const minute = now.getMinutes();
-            const day = now.getDay(); // 0=Sun, 1=Mon...
             
             // Only show if within view hours
             if (hour >= START_HOUR && hour < END_HOUR) {
                 const totalMins = (hour * 60 + minute) - (START_HOUR * 60);
                 const percentage = (totalMins / TOTAL_MINUTES) * 100;
                 
-                const line = document.getElementById('current-time-line');
-                if (line) {
-                    line.style.top = `${percentage}%`;
-                    line.classList.remove('hidden');
+                const staticLine = document.getElementById('static-current-time-line');
+                if (staticLine) {
+                    staticLine.style.top = `${percentage}%`;
+                    staticLine.classList.remove('hidden');
+                }
+                const weeklyLine = document.getElementById('weekly-current-time-line');
+                if (weeklyLine) {
+                    weeklyLine.style.top = `${percentage}%`;
+                    weeklyLine.classList.remove('hidden');
                 }
             }
         }
 
+        function renderWeeklyView() {
+            // Set Start Date to be the Sunday of current week state
+            const startDate = new Date(currentWeekStart);
+            const endDate = new Date(currentWeekStart);
+            endDate.setDate(startDate.getDate() + 6);
+
+            // Update Header Title
+            const monthStr = startDate.toLocaleString('default', { month: 'long' });
+            const yearStr = startDate.getFullYear();
+            const endMonthStr = endDate.toLocaleString('default', { month: 'long' });
+            
+            let titleText = `${monthStr} ${yearStr}`;
+            if (monthStr !== endMonthStr) titleText = `${monthStr} - ${endMonthStr} ${yearStr}`;
+            document.getElementById('week-view-title').innerText = titleText;
+
+            // Render Header Row (Sun 25, Mon 26...)
+            const headerRow = document.getElementById('week-header-row');
+            if (headerRow) {
+                headerRow.innerHTML = '';
+                const today = new Date();
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(startDate);
+                    d.setDate(startDate.getDate() + i);
+                    
+                    const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                    
+                    const col = document.createElement('div');
+                    col.className = "flex flex-col items-center justify-center border-r border-gray-200 dark:border-gray-700 h-full relative";
+                    if (isToday) col.classList.add('bg-indigo-50/50', 'dark:bg-indigo-900/10');
+                    
+                    col.innerHTML = `
+                        <span class="text-xs font-semibold uppercase ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'} mb-1">${days[i]}</span>
+                        <div class="w-9 h-9 flex items-center justify-center rounded-full ${isToday ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-200 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'} text-xl">
+                            ${d.getDate()}
+                        </div>
+                    `;
+                    headerRow.appendChild(col);
+                }
+            }
+
+            // Render Time Labels for Weekly Calendar
+            const timeContainer = document.getElementById('weekly-time-labels');
+            if (timeContainer) {
+                timeContainer.innerHTML = '';
+                for (let h = START_HOUR; h < END_HOUR; h++) {
+                    const label = document.createElement('div');
+                    const marginTop = h === START_HOUR ? '-mt-0' : '-mt-2';
+                    label.className = `absolute w-full text-right pr-2 text-xs text-gray-400 font-medium ${marginTop}`;
+                    label.style.top = `${((h - START_HOUR) * 60 / TOTAL_MINUTES) * 100}%`;
+                    label.innerText = `${h > 12 ? h - 12 : h} ${h >= 12 ? 'PM' : 'AM'}`;
+                    timeContainer.appendChild(label);
+                }
+            }
+
+            // Clear Grid Columns
+            for (let i = 0; i < 7; i++) {
+                const col = document.getElementById(`weekly-col-${i}`);
+                if (col) col.innerHTML = '';
+                const taskCol = document.getElementById(`weekly-task-col-${i}`);
+                if (taskCol) taskCol.innerHTML = '';
+            }
+
+            // --- Render Tasks (Assignments) ---
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                
+                const dayTasks = assignments.filter(a => a.date === dateStr);
+                
+                if (dayTasks.length > 0) {
+                    dayTasks.forEach(task => {
+                        let colorKey = Object.keys(rawColors).find(key => task.course.startsWith(key)) || 'Other';
+                        const color = rawColors[colorKey] || rawColors['Other'];
+                        
+                        // Check if task has a specific time
+                        if (task.time) {
+                            const container = document.getElementById(`weekly-col-${i}`);
+                            if (container) {
+                                // Calculate position
+                                const [h, m] = task.time.split(':').map(Number);
+                                const startMin = ((h * 60) + m) - (START_HOUR * 60);
+                                
+                                // Only render if within view hours (8am - 7pm)
+                                if (startMin >= 0 && startMin < TOTAL_MINUTES) {
+                                    // Use stored duration or default to 60 mins
+                                    const durationMin = task.duration ? parseInt(task.duration) : 60; 
+                                    const heightPercent = (durationMin / TOTAL_MINUTES) * 100;
+                                    
+                                    const el = document.createElement('div');
+                                    // Use same style classes as the top row/monthly view for consistency
+                                    el.className = "absolute inset-x-1 rounded px-1.5 py-1 text-white text-[10px] overflow-hidden shadow-sm cursor-pointer hover:opacity-90 transition-opacity z-20 flex flex-col justify-between";
+                                    el.style.backgroundColor = color;
+                                    el.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
+                                    el.style.height = `${heightPercent}%`;
+                                    
+                                    // Format time for display
+                                    const formatTime = (timeString) => {
+                                        if(!timeString) return '';
+                                        const [th, tm] = timeString.split(':').map(Number);
+                                        const h12 = th > 12 ? th - 12 : (th === 0 ? 12 : th);
+                                        const suffix = th >= 12 ? 'p' : 'a';
+                                        return `${h12}:${tm < 10 ? '0'+tm : tm}${suffix}`;
+                                    };
+
+                                    const startTimeStr = formatTime(task.time);
+                                    const endTimeStr = task.endTime ? formatTime(task.endTime) : '';
+                                    const displayTime = endTimeStr ? `${startTimeStr} - ${endTimeStr}` : startTimeStr;
+
+                                    el.title = `${task.course}: ${task.title} (${displayTime})`;
+
+                                    // Adjust content based on height
+                                    if (durationMin < 45) {
+                                        // Condensed view for short tasks
+                                        el.innerHTML = `<div class="truncate leading-tight flex justify-between"><span><span class="font-bold">${task.type.substring(0,2)}</span> ${task.title}</span> <span class="opacity-75 text-[9px]">${startTimeStr}</span></div>`;
+                                    } else {
+                                        el.innerHTML = `<span class="font-bold truncate">${task.type.substring(0,2)}</span> <span class="truncate leading-tight">${task.title}</span><div class="text-[9px] opacity-90 mt-auto">${displayTime}</div>`;
+                                    }
+                                    
+                                    el.onclick = (e) => { e.stopPropagation(); window.editAssignmentUI(task.id); };
+                                    container.appendChild(el);
+                                }
+                            }
+                        } else {
+                            // No time -> Top Row ("All Day")
+                            const container = document.getElementById(`weekly-task-col-${i}`);
+                            if (container) {
+                                const el = document.createElement('div');
+                                el.className = "text-[10px] px-1.5 py-1 rounded text-white truncate shadow-sm mb-1 cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-1";
+                                el.style.backgroundColor = color;
+                                el.title = `${task.course}: ${task.title}`;
+                                el.innerHTML = `<span class="font-bold">${task.type.substring(0,2)}</span> ${task.title}`;
+                                el.onclick = (e) => { e.stopPropagation(); window.editAssignmentUI(task.id); };
+                                container.appendChild(el);
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Re-calc current time line position
+            if (scheduleInterval) clearInterval(scheduleInterval);
+            scheduleInterval = setInterval(updateCurrentTimeLine, 60000);
+            updateCurrentTimeLine();
+        }
+
         function renderSchedule() {
-            const timeContainer = document.getElementById('time-labels');
+            // Render STATIC 5-DAY schedule
+            const timeContainer = document.getElementById('static-time-labels');
             if (timeContainer) {
                 timeContainer.innerHTML = '';
                 for (let h = START_HOUR; h < END_HOUR; h++) {
@@ -1104,13 +1289,13 @@
             }
             // Clear columns
             ['mon','tue','wed','thu','fri'].forEach(d => {
-                const col = document.getElementById(`col-${d}`);
+                const col = document.getElementById(`static-col-${d}`);
                 if(col) col.innerHTML = '';
             });
 
             // Render Events
             schedule.forEach(event => {
-                const container = document.getElementById(`col-${event.day}`);
+                const container = document.getElementById(`static-col-${event.day}`);
                 if (!container) return;
                 
                 const getMinutes = (timeStr) => {
@@ -1179,6 +1364,127 @@
             updateCurrentTimeLine();
         }
         
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            if (!grid) return;
+            const monthYear = document.getElementById('calendar-month-year');
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const today = new Date();
+            
+            monthYear.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+            grid.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const div = document.createElement('div');
+                div.className = "h-28 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg";
+                grid.appendChild(div);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const div = document.createElement('div');
+                const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                
+                div.className = `h-28 bg-white dark:bg-gray-800 border ${isToday ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-100 dark:border-gray-700'} rounded-lg p-1.5 flex flex-col relative group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer`;
+                div.onclick = () => window.openDayView(dateStr);
+
+                let html = `<span class="text-xs font-semibold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}">${day}</span>`;
+                html += `<button onclick="event.stopPropagation(); window.openAssignmentModal('${dateStr}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 bg-indigo-50 dark:bg-indigo-900 rounded text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 transition-opacity z-10" title="Add Task"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg></button>`;
+                html += `<div class="mt-1 flex flex-col gap-1 overflow-y-auto no-scrollbar" style="max-height: 5rem;">`;
+                
+                const dayAssignments = assignments.filter(a => a.date === dateStr);
+                dayAssignments.forEach(a => {
+                    let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
+                    const color = rawColors[colorKey] || rawColors['Other'];
+                    
+                    // Logic to display time in monthly view
+                    let timeDisplay = "";
+                    if(a.time) {
+                        const format = (t) => {
+                            const [h, m] = t.split(':').map(Number);
+                            const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                            const s = h >= 12 ? 'p' : 'a';
+                            return `${h12}:${m < 10 ? '0'+m : m}${s}`;
+                        };
+                        
+                        timeDisplay = format(a.time);
+                        if(a.endTime) {
+                            timeDisplay += `-${format(a.endTime)}`;
+                        }
+                        timeDisplay += " ";
+                    }
+
+                    html += `<div class="text-[10px] px-1.5 py-0.5 rounded text-white truncate shadow-sm" style="background-color: ${color}">${timeDisplay}${a.course.split(' ')[0]} - ${a.title}</div>`;
+                });
+                html += `</div>`;
+                div.innerHTML = html;
+                grid.appendChild(div);
+            }
+        }
+
+        // Restored function that was missing
+        function renderDayViewContent(dateStr) {
+            const list = document.getElementById('day-view-list');
+            if (!list) return;
+            list.innerHTML = '';
+            
+            const dayAssignments = assignments.filter(a => a.date === dateStr);
+            if (dayAssignments.length === 0) {
+                list.innerHTML = `<div class="flex flex-col items-center justify-center py-10 text-gray-400"><p>No tasks for this day.</p><button onclick="window.closeDayView(); window.openAssignmentModal('${dateStr}')" class="mt-4 text-indigo-600 hover:underline text-sm">Add a task</button></div>`;
+                return;
+            }
+
+            dayAssignments.forEach(a => {
+                let colorKey = Object.keys(rawColors).find(key => a.course.startsWith(key)) || 'Other';
+                const color = rawColors[colorKey] || rawColors['Other'];
+                const item = document.createElement('div');
+                item.className = "flex gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 relative group";
+                
+                // Format time logic
+                let timeStr = "";
+                if(a.time) {
+                     const [h, m] = a.time.split(':').map(Number);
+                     const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                     const s = h >= 12 ? 'p' : 'a';
+                     timeStr = `${h12}:${m < 10 ? '0'+m : m}${s}`;
+                     if(a.endTime) {
+                         const [eh, em] = a.endTime.split(':').map(Number);
+                         const eh12 = eh > 12 ? eh - 12 : (eh === 0 ? 12 : eh);
+                         const es = eh >= 12 ? 'p' : 'a';
+                         timeStr += ` - ${eh12}:${em < 10 ? '0'+em : em}${es}`;
+                     }
+                }
+
+                item.innerHTML = `
+                    <div class="w-1.5 self-stretch rounded-full" style="background-color: ${color}"></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded text-white mb-1 inline-block" style="background-color: ${color}">${a.course}</span>
+                                <span class="text-xs font-medium text-gray-500 uppercase ml-2 tracking-wide">${a.type}</span>
+                                ${timeStr ? `<span class="text-xs font-medium text-indigo-600 dark:text-indigo-400 ml-2">${timeStr}</span>` : ''}
+                            </div>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="window.editAssignmentUI('${a.id}')" class="text-gray-400 hover:text-indigo-600 p-1" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onclick="window.openDeleteModal('${a.id}')" class="text-gray-400 hover:text-red-500 p-1" title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-lg mt-1">${a.title}</h4>
+                        ${a.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-750 p-3 rounded-lg border border-gray-100 dark:border-gray-700 whitespace-pre-wrap">${a.notes}</div>` : ''}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
         // --- FIREBASE INIT ---
         async function initApp() {
              try {
@@ -1233,10 +1539,18 @@
                 document.getElementById('auth-status').classList.remove('hidden');
                 // Ensure render happens even if firebase fails
                 renderCalendar();
+                renderWeeklyView();
             }
             
             // Initial Render
             init();
+
+            // Set current week start to last Sunday (or today if Sunday)
+            const today = new Date();
+            const day = today.getDay();
+            const diff = today.getDate() - day;
+            currentWeekStart = new Date(today.setDate(diff));
+            renderWeeklyView();
 
             // Fullscreen listener
             document.addEventListener('fullscreenchange', () => {
@@ -1261,6 +1575,7 @@
                 // Update local storage as backup
                 localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                 renderCalendar();
+                renderWeeklyView();
                 const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
                 if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
                     renderDayViewContent(dayViewDate);
