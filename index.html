@@ -318,6 +318,14 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
+        <!-- Fullscreen Toggle Button -->
+        <button onclick="window.toggleFullScreen()" id="fullscreen-btn" class="absolute top-6 left-6 z-50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" title="Toggle Full Screen">
+            <!-- Enter Fullscreen Icon (Arrows out) -->
+            <svg id="icon-enter-fullscreen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            <!-- Exit Fullscreen Icon (Arrows in) -->
+            <svg id="icon-exit-fullscreen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H6m0 0v4m0-4l5 5m7-5h4m0 0v4m0-4l-5 5m-7-5h-4m4 0V6m0 4L5 5m14 5h-4m0 0V6m0 4l5-5" /></svg>
+        </button>
+
         <div class="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/20 animate-pulse-slow z-0 pointer-events-none"></div>
         <div class="z-10 flex flex-col items-center gap-6 p-8 max-w-md w-full">
             <div class="text-center space-y-2">
@@ -823,6 +831,16 @@
                 updateTimerDisplay();
             }
         };
+        
+        window.toggleFullScreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        };
 
         window.toggleStudyMode = () => {
             const overlay = document.getElementById('study-overlay');
@@ -836,6 +854,11 @@
                 document.body.classList.remove('overflow-hidden');
                 if (isTimerRunning) window.toggleTimer();
                 
+                // Exit fullscreen if active when closing
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+
                 overlay.classList.add('opacity-0');
                 setTimeout(() => overlay.classList.add('hidden'), 300);
             }
@@ -1207,6 +1230,19 @@
             
             // Initial Render
             init();
+
+            // Fullscreen listener
+            document.addEventListener('fullscreenchange', () => {
+                const enterIcon = document.getElementById('icon-enter-fullscreen');
+                const exitIcon = document.getElementById('icon-exit-fullscreen');
+                if (document.fullscreenElement) {
+                    enterIcon.classList.add('hidden');
+                    exitIcon.classList.remove('hidden');
+                } else {
+                    enterIcon.classList.remove('hidden');
+                    exitIcon.classList.add('hidden');
+                }
+            });
         }
 
         function setupFirestoreListeners() {
