@@ -1189,7 +1189,45 @@
                 if (taskCol) taskCol.innerHTML = '';
             }
 
-            // --- Render Tasks (Assignments) ---
+            // --- Render Static Recurring Classes IN WEEKLY VIEW ---
+            const daysMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            schedule.forEach(event => {
+                const dayIndex = daysMap.indexOf(event.day);
+                if (dayIndex === -1) return; // invalid day
+
+                const container = document.getElementById(`weekly-col-${dayIndex}`);
+                if (!container) return;
+                
+                const getMinutes = (timeStr) => {
+                    const [h, m] = timeStr.split(':').map(Number);
+                    return ((h * 60) + m) - (START_HOUR * 60);
+                };
+                const formatTime = (timeStr) => {
+                    let [h, m] = timeStr.split(':');
+                    h = parseInt(h);
+                    const suffix = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h > 12 ? h - 12 : h;
+                    return `${h12}:${m} ${suffix}`;
+                };
+
+                const startMin = getMinutes(event.start);
+                const durationMin = ((parseInt(event.end.split(':')[0])*60 + parseInt(event.end.split(':')[1])) - (parseInt(event.start.split(':')[0])*60 + parseInt(event.start.split(':')[1])));
+                const heightPercent = (durationMin / TOTAL_MINUTES) * 100;
+                
+                const card = document.createElement('div');
+                const codeKey = event.title.substring(0, 7);
+                const colorSet = colors[codeKey] || colors['default'];
+                
+                card.className = `absolute inset-x-1 rounded border-l-4 p-1.5 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark} justify-between`;
+                card.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
+                card.style.height = `${heightPercent}%`;
+                card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
+                
+                card.innerHTML = `<div class="font-bold leading-snug mb-0.5 text-xs truncate pointer-events-none">${event.title}</div><div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div><div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>`;
+                container.appendChild(card);
+            });
+
+            // --- Render Tasks (Assignments) in Top Row ---
             for (let i = 0; i < 7; i++) {
                 const d = new Date(startDate);
                 d.setDate(startDate.getDate() + i);
