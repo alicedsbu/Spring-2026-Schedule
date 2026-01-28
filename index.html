@@ -37,7 +37,7 @@
         #current-time-line { pointer-events: none; transition: top 0.5s ease-in-out; z-index: 25; }
         #current-time-line::before { content: ''; position: absolute; left: -6px; top: -5px; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; }
         
-        #study-overlay, #course-modal-overlay, #assignment-modal-overlay, #day-view-overlay, #delete-modal-overlay { transition: opacity 0.2s ease-in-out; }
+        #study-overlay, #course-modal-overlay, #assignment-modal-overlay, #day-view-overlay, #delete-modal-overlay, #auth-overlay { transition: opacity 0.2s ease-in-out; }
         .modal-open .modal-content { transform: scale(1); opacity: 1; }
         .modal-closed .modal-content { transform: scale(0.95); opacity: 0; }
         
@@ -62,7 +62,10 @@
                 <span class="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
                 <p id="today-classes" class="text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-md hidden sm:block">Loading...</p>
             </div>
-            <p id="auth-status" class="text-[10px] text-gray-400 hidden absolute bottom-1 right-2 md:static md:block md:mt-0.5">Loading...</p>
+            <!-- Auth Status -->
+            <div class="flex items-center gap-2 mt-1">
+                <p id="auth-status" class="text-[10px] text-gray-400 font-medium">Connecting...</p>
+            </div>
         </div>
         
         <div class="flex items-center gap-3 ml-auto sm:ml-0">
@@ -81,7 +84,6 @@
     <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8 mt-4 pb-12">
         
         <!-- Visual Schedule Section -->
-        <!-- Removed overflow-hidden from outer container to prevent hover clipping -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 shrink-0">
             <!-- Header for Schedule Box -->
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center relative z-40 shrink-0 rounded-t-xl">
@@ -93,13 +95,10 @@
             </div>
             
             <!-- Full Height Schedule -->
-            <!-- Rounded bottom applied here -->
             <div class="overflow-x-auto relative scroll-smooth rounded-b-xl border-t border-gray-100 dark:border-gray-700">
                 <div class="min-w-[800px] relative flex">
                     <!-- Left Column (Times) -->
-                    <!-- Sticky Left: 0, Z-Index: 60 -->
                     <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-[60] transition-colors duration-200">
-                        <!-- Top-Left Corner Block (Sticks Top-0 relative to this container) -->
                         <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-[60] border-b border-gray-100 dark:border-gray-700 shadow-sm"></div> 
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
@@ -166,6 +165,25 @@
         </div>
 
     </main>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-overlay" class="fixed inset-0 z-[300] bg-gray-900/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center border border-gray-200 dark:border-gray-700">
+            <div class="mb-6">
+                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Sync Schedule</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Enter a secret word (e.g. "MySecret123") to access your schedule on all your devices.</p>
+            </div>
+            <form onsubmit="window.saveAccessKey(event)">
+                <input type="text" id="access-code-input" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-3 rounded-xl mb-4 text-center font-bold text-lg tracking-wider text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase placeholder-gray-400" placeholder="ENTER SECRET WORD" required>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95">Access Schedule</button>
+            </form>
+        </div>
+    <!-- AUTH MODAL REMOVED -->
 
     <!-- DAY VIEW MODAL -->
     <div id="day-view-overlay" class="fixed inset-0 z-[130] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeDayView()">
@@ -413,6 +431,7 @@
         let defaultTime = 25 * 60;
         let timerMode = 'countdown';
         let stopwatchSeconds = 0;
+        
         const FULL_DASH_ARRAY = 565.48;
         const START_HOUR = 8;
         const END_HOUR = 19;
@@ -450,14 +469,18 @@
             'default': { light: 'bg-gray-100 border-gray-300 text-gray-900 hover:bg-gray-200', dark: 'dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700' }
         };
 
+        // --- AUTH & KEY FUNCTIONS ---
+        // Removed Access Key logic for seamless sync
+
         // --- STUDY STATS ---
         async function fetchStudyStats() {
-            if(!user || !db) return; // FIX: Use user instead of userId
+            if(!user || !db) return;
             const today = new Date();
             today.setHours(0,0,0,0);
             
             try {
-                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'studySessions')); // FIX: Use user.uid
+                // Use public shared path
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'studySessions')); 
                 const snapshot = await getDocs(q);
                 let totalMinutes = 0;
                 
@@ -483,9 +506,10 @@
         }
 
         async function saveStudySession(durationMinutes) {
-            if(!user || !db || durationMinutes < 1) return; // FIX: Use user instead of userId
+            if(!user || !db || durationMinutes < 1) return;
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'studySessions'), { // FIX: Use user.uid
+                // Use public shared path
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'studySessions'), { 
                     duration: durationMinutes,
                     timestamp: new Date()
                 });
@@ -599,13 +623,13 @@
             if (title && date) {
                 try {
                     if (id) {
-                        // Update existing
-                        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'assignments', id), {
+                        // Update existing using Public Shared Path
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assignments', id), {
                             title, course, type, date, notes
                         });
                     } else {
-                        // Create new
-                        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'assignments'), {
+                        // Create new using Public Shared Path
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'assignments'), {
                             title, course, type, date, notes, createdAt: new Date()
                         });
                     }
@@ -679,7 +703,8 @@
 
             if (assignmentToDelete && user) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'assignments', assignmentToDelete));
+                    // Delete from Public Shared Path
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assignments', assignmentToDelete));
                     window.closeDeleteModal();
                 } catch (e) { console.error(e); }
             }
@@ -1247,7 +1272,8 @@
 
         function setupFirestoreListeners() {
             if (!user || !db) return;
-            const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'assignments'));
+            // Uses the Public Shared Path so all devices see the same data
+            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'assignments'));
             onSnapshot(q, (snapshot) => {
                 assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 // Update local storage as backup
