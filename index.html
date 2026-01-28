@@ -23,13 +23,16 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; }
         
         .event-card { transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; z-index: 10; }
-        .event-card:hover { transform: scale(1.02); z-index: 30; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        /* Adjusted hover z-index to be lower than sticky headers (40+) */
+        .event-card:hover { transform: scale(1.02); z-index: 30; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); }
         
         #current-time-line { pointer-events: none; transition: top 0.5s ease-in-out; z-index: 25; }
         #current-time-line::before { content: ''; position: absolute; left: -6px; top: -5px; width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; }
@@ -51,22 +54,23 @@
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200 relative">
 
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50 transition-colors duration-200 h-[73px]">
-        <div>
-            <h1 id="page-title" class="text-2xl font-bold text-gray-900 dark:text-white">My Spring Schedule</h1>
-            <div class="flex items-center gap-2 mt-0.5 text-sm">
-                <p id="current-date" class="font-medium text-indigo-600 dark:text-indigo-400 mt-0.5 mb-1"></p>
+    <header class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex flex-wrap justify-between items-center shadow-sm z-[100] transition-colors duration-200 min-h-[5rem] h-auto shrink-0 sticky top-0 gap-4">
+        <div class="flex flex-col justify-center space-y-1.5">
+            <h1 id="page-title" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">My Spring Schedule</h1>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <p id="current-date" class="font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap"></p>
                 <span class="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
                 <p id="today-classes" class="text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-md hidden sm:block">Loading...</p>
             </div>
-            <p id="auth-status" class="text-xs text-gray-400 hidden">Loading calendar...</p>
+            <p id="auth-status" class="text-[10px] text-gray-400 hidden absolute bottom-1 right-2 md:static md:block md:mt-0.5">Loading...</p>
         </div>
-        <div class="flex items-center gap-4">
-            <button onclick="window.toggleStudyMode()" class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+        
+        <div class="flex items-center gap-3 ml-auto sm:ml-0">
+            <button onclick="window.toggleStudyMode()" class="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span class="font-medium text-sm hidden sm:inline">Focus Mode</span>
             </button>
-            <button onclick="window.toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onclick="window.toggleDarkMode()" class="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
                 <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                 <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
             </button>
@@ -74,11 +78,13 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8">
+    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-8 mt-4 pb-12">
         
         <!-- Visual Schedule Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-200">
-            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center relative z-40">
+        <!-- Removed overflow-hidden from outer container to prevent hover clipping -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 shrink-0">
+            <!-- Header for Schedule Box -->
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center relative z-40 shrink-0 rounded-t-xl">
                 <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     Weekly Overview
@@ -86,14 +92,22 @@
                 <div id="live-indicator-status" class="text-xs font-medium text-red-500 flex items-center gap-1 animate-pulse"><span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</div>
             </div>
             
-            <div class="relative overflow-x-auto">
+            <!-- Full Height Schedule -->
+            <!-- Rounded bottom applied here -->
+            <div class="overflow-x-auto relative scroll-smooth rounded-b-xl border-t border-gray-100 dark:border-gray-700">
                 <div class="min-w-[800px] relative flex">
-                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-40 transition-colors duration-200">
-                        <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 border-b border-gray-100 dark:border-gray-700"></div> 
+                    <!-- Left Column (Times) -->
+                    <!-- Sticky Left: 0, Z-Index: 60 -->
+                    <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sticky left-0 z-[60] transition-colors duration-200">
+                        <!-- Top-Left Corner Block (Sticks Top-0 relative to this container) -->
+                        <div class="h-10 bg-gray-50 dark:bg-gray-850 sticky top-0 z-[60] border-b border-gray-100 dark:border-gray-700 shadow-sm"></div> 
                         <div id="time-labels" class="relative" style="height: 1188px;"></div>
                     </div>
+
+                    <!-- Right Section (Grid) -->
                     <div class="flex-1 relative bg-white dark:bg-gray-800 transition-colors duration-200">
-                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-40 shadow-sm transition-colors duration-200 h-10 items-center">
+                        <!-- Days Row -->
+                        <div class="grid grid-cols-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 sticky top-0 z-[50] shadow-sm transition-colors duration-200 h-10 items-center">
                             <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Mon</div>
                             <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Tue</div>
                             <div class="text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">Wed</div>
@@ -118,9 +132,9 @@
         </div>
 
         <!-- CALENDAR SECTION -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
-            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex justify-between items-center">
-                <div class="flex items-center gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200 shrink-0">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex flex-wrap items-center gap-4">
                     <h2 class="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -137,7 +151,7 @@
                         </button>
                     </div>
                 </div>
-                <button onclick="window.openAssignmentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow flex items-center gap-1">
+                <button onclick="window.openAssignmentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow flex items-center gap-1 ml-auto sm:ml-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Add Task
                 </button>
@@ -218,6 +232,65 @@
                     <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow">Save</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- COURSE MODAL -->
+    <div id="course-modal-overlay" class="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeCourseModal(event)">
+        <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform scale-95 opacity-0 transition-all">
+            <!-- Header with Dynamic Color -->
+            <div id="modal-header" class="p-6 text-white relative">
+                <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/80 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <div class="inline-block px-2 py-1 bg-white/20 rounded text-xs font-bold mb-2 backdrop-blur-sm" id="modal-type">Lecture</div>
+                <h2 id="modal-title" class="text-3xl font-bold mb-1">CHE 383</h2>
+                <p id="modal-subtitle" class="text-white/90 font-medium">Intro Synthetic & Spectr Lab</p>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded-lg text-indigo-600 dark:text-indigo-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase">Location</p>
+                            <p id="modal-loc" class="font-medium text-gray-900 dark:text-white text-sm">Harriman 137</p>
+                            <a id="modal-loc-link" href="#" target="_blank" class="text-xs text-indigo-600 hover:underline">View on Map</a>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-3">
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded-lg text-indigo-600 dark:text-indigo-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase">Instructor</p>
+                            <p id="modal-prof" class="font-medium text-gray-900 dark:text-white text-sm">Sajjad Hossain</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Exams -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Upcoming Exams
+                    </h4>
+                    <div id="modal-exam-grid" class="grid grid-cols-2 gap-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3 pt-2">
+                    <a id="modal-syllabus-link" href="#" target="_blank" class="flex-1 text-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                        View Syllabus
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -313,60 +386,6 @@
         </div>
     </div>
 
-    <!-- COURSE DETAILS MODAL -->
-    <div id="course-modal-overlay" class="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeCourseModal(event)">
-        <div id="course-modal-content" class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform scale-95 opacity-0 transition-all">
-            <div id="modal-header" class="p-6 text-white relative bg-indigo-600">
-                <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <div class="flex items-center gap-2 mb-1">
-                     <span id="modal-type" class="text-xs font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded">Lecture</span>
-                </div>
-                <h3 id="modal-title" class="text-2xl font-bold leading-tight">Course Title</h3>
-                <p id="modal-subtitle" class="opacity-90 mt-1">Full Title</p>
-            </div>
-            
-            <div class="p-6 space-y-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-start gap-3">
-                        <div class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Instructor</p>
-                            <p id="modal-prof" class="font-medium text-gray-900 dark:text-gray-100">Dr. Name</p>
-                        </div>
-                    </div>
-                    <a id="modal-loc-link" href="#" target="_blank" class="flex items-start gap-3 group">
-                        <div class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Location</p>
-                            <p id="modal-loc" class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 underline decoration-dotted">Room 101</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        Upcoming Exams
-                    </h4>
-                    <div id="modal-exam-grid" class="grid grid-cols-2 gap-4"></div>
-                </div>
-
-                <div class="flex gap-3">
-                    <a id="modal-syllabus-link" href="#" target="_blank" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium text-sm text-center transition-colors shadow flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        View Syllabus
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- MAIN LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -380,6 +399,7 @@
         let currentCalendarDate = new Date();
         let assignmentToDelete = null;
         let timerInterval = null;
+        let scheduleInterval = null;
         let timeLeft = 25 * 60;
         let isTimerRunning = false;
         let defaultTime = 25 * 60;
@@ -424,12 +444,12 @@
 
         // --- STUDY STATS ---
         async function fetchStudyStats() {
-            if(!userId || !db) return;
+            if(!user || !db) return; // FIX: Use user instead of userId
             const today = new Date();
             today.setHours(0,0,0,0);
             
             try {
-                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'));
+                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'studySessions')); // FIX: Use user.uid
                 const snapshot = await getDocs(q);
                 let totalMinutes = 0;
                 
@@ -455,9 +475,9 @@
         }
 
         async function saveStudySession(durationMinutes) {
-            if(!userId || !db || durationMinutes < 1) return;
+            if(!user || !db || durationMinutes < 1) return; // FIX: Use user instead of userId
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'studySessions'), {
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'studySessions'), { // FIX: Use user.uid
                     duration: durationMinutes,
                     timestamp: new Date()
                 });
@@ -535,7 +555,7 @@
         window.handleAssignmentSubmit = async (e) => {
             e.preventDefault();
             
-            // If offline, just mimic adding
+            // If offline, just mimic adding to local state + localStorage
             if (!db || !auth) {
                  const id = document.getElementById('task-id').value;
                  const data = {
@@ -546,14 +566,16 @@
                     date: document.getElementById('task-date').value,
                     notes: document.getElementById('task-notes').value
                  };
+                 
                  if(id) {
                     assignments = assignments.map(a => a.id === id ? data : a);
                  } else {
                     assignments.push(data);
                  }
+                 
+                 localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                  renderCalendar();
                  window.closeAssignmentModal(null, true);
-                 alert("Saved locally (Offline Mode)");
                  return;
             }
 
@@ -636,6 +658,7 @@
             if (!db || !user) {
                 if(assignmentToDelete) {
                     assignments = assignments.filter(a => a.id !== assignmentToDelete);
+                    localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                     renderCalendar();
                     window.closeDeleteModal();
                     if(document.getElementById('day-view-overlay').classList.contains('hidden') === false) {
@@ -1017,6 +1040,25 @@
             });
         }
 
+        function updateCurrentTimeLine() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const day = now.getDay(); // 0=Sun, 1=Mon...
+            
+            // Only show if within view hours
+            if (hour >= START_HOUR && hour < END_HOUR) {
+                const totalMins = (hour * 60 + minute) - (START_HOUR * 60);
+                const percentage = (totalMins / TOTAL_MINUTES) * 100;
+                
+                const line = document.getElementById('current-time-line');
+                if (line) {
+                    line.style.top = `${percentage}%`;
+                    line.classList.remove('hidden');
+                }
+            }
+        }
+
         function renderSchedule() {
             const timeContainer = document.getElementById('time-labels');
             if (timeContainer) {
@@ -1080,7 +1122,6 @@
                         const isUrgent = diffDays <= 7;
                         const bgClass = isUrgent ? 'bg-red-500 text-white animate-pulse' : 'bg-white/60 dark:bg-black/40 text-gray-800 dark:text-gray-200';
                         
-                        // Format: "Exam 1: 5 days left" or "Exam 1: Today"
                         let daysText = `${diffDays} days left`;
                         if (diffDays === 0) daysText = "Today";
                         if (diffDays === 1) daysText = "1 day left";
@@ -1091,27 +1132,51 @@
                     }
                 }
 
-                card.className = `absolute inset-x-1 rounded border-l-4 p-2 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark} justify-between`;
+                // Adjusted padding to p-1.5 and removed overflow-hidden from inside card to let text breathe better
+                // Using leading-snug for better line height
+                card.className = `absolute inset-x-1 rounded border-l-4 p-1.5 text-xs flex flex-col overflow-hidden event-card cursor-pointer ${colorSet.light} ${colorSet.dark} justify-between`;
                 card.style.top = `${(startMin / TOTAL_MINUTES) * 100}%`;
-                // No min-height to allow squishing slightly if needed, but height is % based
-                // h-full on container ensures it fits
                 card.style.height = `${heightPercent}%`;
                 card.onclick = () => window.openCourseModal(encodeURIComponent(JSON.stringify(event)));
                 
-                card.innerHTML = `<div class="font-bold leading-tight mb-0.5 text-xs truncate pointer-events-none">${event.title}</div><div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div>${examHtml}<div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>`;
+                card.innerHTML = `<div class="font-bold leading-snug mb-0.5 text-xs truncate pointer-events-none">${event.title}</div><div class="font-bold opacity-100 mb-1 inline-block bg-white/40 dark:bg-black/20 px-1 rounded text-[10px] pointer-events-none">${formatTime(event.start)} - ${formatTime(event.end)}</div>${examHtml}<div class="mt-auto font-medium opacity-75 truncate text-[10px] md:text-xs flex items-center gap-1 pointer-events-none">${event.loc}</div>`;
                 container.appendChild(card);
             });
+            
+            // Re-calc current time line position
+            if (scheduleInterval) clearInterval(scheduleInterval);
+            scheduleInterval = setInterval(updateCurrentTimeLine, 60000);
+            updateCurrentTimeLine();
         }
         
         // --- FIREBASE INIT ---
         async function initApp() {
              try {
+                let firebaseConfig;
+
+                // 1. Check for Environment Config (Works in this preview editor)
                 if (typeof __firebase_config !== 'undefined') {
-                    const firebaseConfig = JSON.parse(__firebase_config);
+                    firebaseConfig = JSON.parse(__firebase_config);
+                    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                } 
+                // 2. Your Personal Config (Works on your phone/deployment)
+                else {
+                    firebaseConfig = {
+                        apiKey: "AIzaSyAJzNfMfm3GjsAtigoxBgMhBpmcxKdCQqQ",
+                        authDomain: "alice-s-schedule-a2f78.firebaseapp.com",
+                        projectId: "alice-s-schedule-a2f78",
+                        storageBucket: "alice-s-schedule-a2f78.firebasestorage.app",
+                        messagingSenderId: "1066052786485",
+                        appId: "1:1066052786485:web:6dfc6820677f6cecf7147c"
+                    };
+                    // Use a consistent ID for your app's data path
+                    appId = 'alice-spring-schedule-v1'; 
+                }
+
+                if (firebaseConfig) {
                     const app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
                     db = getFirestore(app);
-                    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     
                     // Auth logic
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -1124,17 +1189,20 @@
                         user = u;
                         if (user) {
                             document.getElementById('auth-status').innerText = 'Syncing...';
+                            document.getElementById('auth-status').classList.remove('hidden');
                             setupFirestoreListeners();
                             fetchStudyStats();
                         }
                     });
                 } else {
-                    throw new Error("Firebase config not found");
+                    throw new Error("No Firebase config found");
                 }
             } catch (e) {
-                console.warn("Running in offline mode:", e);
-                document.getElementById('auth-status').innerText = "Offline Mode";
+                console.warn("Running in local mode:", e);
+                document.getElementById('auth-status').innerText = "Local Mode";
                 document.getElementById('auth-status').classList.remove('hidden');
+                // Ensure render happens even if firebase fails
+                renderCalendar();
             }
             
             // Initial Render
@@ -1146,6 +1214,8 @@
             const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'assignments'));
             onSnapshot(q, (snapshot) => {
                 assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Update local storage as backup
+                localStorage.setItem('my_schedule_data', JSON.stringify(assignments));
                 renderCalendar();
                 const dayViewDate = document.getElementById('day-view-date')?.dataset.date;
                 if (dayViewDate && !document.getElementById('day-view-overlay').classList.contains('hidden')) {
@@ -1154,7 +1224,7 @@
                 document.getElementById('auth-status').innerText = 'Synced';
             }, (error) => {
                  console.error("Firestore Error", error);
-                 document.getElementById('auth-status').innerText = 'Offline Mode';
+                 document.getElementById('auth-status').innerText = 'Local Mode';
             });
         }
         
