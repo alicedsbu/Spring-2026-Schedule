@@ -314,9 +314,9 @@
 
     <!-- COURSE MODAL -->
     <div id="course-modal-overlay" class="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeCourseModal(event)">
-        <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform scale-95 opacity-0 transition-all">
+        <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden transform scale-95 opacity-0 transition-all">
             <!-- Header with Dynamic Color -->
-            <div id="modal-header" class="p-6 text-white relative">
+            <div id="modal-header" class="p-6 text-white relative shrink-0">
                 <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/80 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -325,7 +325,7 @@
                 <p id="modal-subtitle" class="text-white/90 font-medium">Intro Synthetic & Spectr Lab</p>
             </div>
             
-            <div class="p-6 space-y-6">
+            <div class="p-6 space-y-6 overflow-y-auto">
                 <!-- Info Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex items-start gap-3">
@@ -493,10 +493,10 @@
 
         // --- DATA CONSTANTS (schedule, colors, etc) ---
         const schedule = [
-            { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: 'Midterm 1', date: '2025-02-25' }, { name: 'Midterm 2', date: '2025-04-05' }, { name: 'Final', date: '2025-05-14' }] },
-            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
-            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
-            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [] },
+            { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: '📅 Midterm 1', date: '2025-02-25' }, { name: '📅 Midterm 2', date: '2025-04-05' }, { name: '📅 Final', date: '2025-05-14' }] },
+            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: '📅 Exam 1', date: '2026-03-11'}, {name: '📅 Exam 2', date: '2026-04-22'}, {name: '📅 Final', date: '2026-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
+            { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [], syllabusUrl: 'https://drive.google.com/file/d/1ojjo7SloxQthEvrz4cH5xpYUHGNi8dQh/view?usp=drive_link' },
             { 
                 day: 'tue', 
                 title: 'WRT 102 - 27', 
@@ -507,18 +507,18 @@
                 prof: 'Rita Nezami', 
                 fullTitle: 'Intermediate Writing Workshop', 
                 exams: [
-                    { name: 'Pers Essay D1', date: '2026-02-15' },
-                    { name: 'Pers Essay Final', date: '2026-02-28' },
-                    { name: 'Res Paper D1', date: '2026-03-15' },
-                    { name: 'Res Paper Final', date: '2026-04-15' },
-                    { name: 'Text Anal D1', date: '2026-04-15' },
-                    { name: 'Text Anal Final', date: '2026-05-05' },
-                    { name: 'Portfolio', date: '2026-05-09' }
+                    { name: '📅 Pers Essay D1', date: '2026-02-15' },
+                    { name: '📅 Pers Essay Final', date: '2026-02-28' },
+                    { name: '📅 Res Paper D1', date: '2026-03-15' },
+                    { name: '📅 Res Paper Final', date: '2026-04-15' },
+                    { name: '📅 Text Anal D1', date: '2026-04-15' },
+                    { name: '📅 Text Anal Final', date: '2026-05-05' },
+                    { name: '📅 Portfolio', date: '2026-05-09' }
                 ], 
                 syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
             },
-            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
-            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: '📅 Exam 1', date: '2026-03-11'}, {name: '📅 Exam 2', date: '2026-04-22'}, {name: '📅 Final', date: '2026-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
             { day: 'wed', title: 'SBU 102 - S317', type: 'Seminar', start: '14:00', end: '15:20', loc: 'Humanities 3014', prof: 'TBA', fullTitle: 'Undergraduate College Seminar', exams: [] },
             { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
             { 
@@ -531,17 +531,17 @@
                 prof: 'Rita Nezami', 
                 fullTitle: 'Intermediate Writing Workshop', 
                 exams: [
-                    { name: 'Pers Essay D1', date: '2026-02-15' },
-                    { name: 'Pers Essay Final', date: '2026-02-28' },
-                    { name: 'Res Paper D1', date: '2026-03-15' },
-                    { name: 'Res Paper Final', date: '2026-04-15' },
-                    { name: 'Text Anal D1', date: '2026-04-15' },
-                    { name: 'Text Anal Final', date: '2026-05-05' },
-                    { name: 'Portfolio', date: '2026-05-09' }
+                    { name: '📅 Pers Essay D1', date: '2026-02-15' },
+                    { name: '📅 Pers Essay Final', date: '2026-02-28' },
+                    { name: '📅 Res Paper D1', date: '2026-03-15' },
+                    { name: '📅 Res Paper Final', date: '2026-04-15' },
+                    { name: '📅 Text Anal D1', date: '2026-04-15' },
+                    { name: '📅 Text Anal Final', date: '2026-05-05' },
+                    { name: '📅 Portfolio', date: '2026-05-09' }
                 ], 
                 syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
             },
-            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
         ];
 
         const rawColors = {
