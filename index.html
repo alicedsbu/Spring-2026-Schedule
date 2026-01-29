@@ -494,16 +494,54 @@
         // --- DATA CONSTANTS (schedule, colors, etc) ---
         const schedule = [
             { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: 'Midterm 1', date: '2025-02-25' }, { name: 'Midterm 2', date: '2025-04-05' }, { name: 'Final', date: '2025-05-14' }] },
-            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
-            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=sharing' },
+            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
             { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [] },
-            { day: 'tue', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}] },
-            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
-            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=sharing' },
+            { 
+                day: 'tue', 
+                title: 'WRT 102 - 27', 
+                type: 'Lecture', 
+                start: '14:00', 
+                end: '15:20', 
+                loc: 'Humanities 1023', 
+                prof: 'Rita Nezami', 
+                fullTitle: 'Intermediate Writing Workshop', 
+                exams: [
+                    { name: 'Pers Essay D1', date: '2026-02-15' },
+                    { name: 'Pers Essay Final', date: '2026-02-28' },
+                    { name: 'Res Paper D1', date: '2026-03-15' },
+                    { name: 'Res Paper Final', date: '2026-04-15' },
+                    { name: 'Text Anal D1', date: '2026-04-15' },
+                    { name: 'Text Anal Final', date: '2026-05-05' },
+                    { name: 'Portfolio', date: '2026-05-09' }
+                ], 
+                syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
+            },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: 'Midterm', date: '2025-03-20'}, {name: 'Final', date: '2025-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
             { day: 'wed', title: 'SBU 102 - S317', type: 'Seminar', start: '14:00', end: '15:20', loc: 'Humanities 3014', prof: 'TBA', fullTitle: 'Undergraduate College Seminar', exams: [] },
-            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [] },
-            { day: 'thu', title: 'WRT 102 - 27', type: 'Lecture', start: '14:00', end: '15:20', loc: 'Humanities 1023', prof: 'Rita Nezami', fullTitle: 'Intermediate Writing Workshop', exams: [{name: 'Portfolio', date: '2025-05-10'}] },
-            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=sharing' },
+            { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { 
+                day: 'thu', 
+                title: 'WRT 102 - 27', 
+                type: 'Lecture', 
+                start: '14:00', 
+                end: '15:20', 
+                loc: 'Humanities 1023', 
+                prof: 'Rita Nezami', 
+                fullTitle: 'Intermediate Writing Workshop', 
+                exams: [
+                    { name: 'Pers Essay D1', date: '2026-02-15' },
+                    { name: 'Pers Essay Final', date: '2026-02-28' },
+                    { name: 'Res Paper D1', date: '2026-03-15' },
+                    { name: 'Res Paper Final', date: '2026-04-15' },
+                    { name: 'Text Anal D1', date: '2026-04-15' },
+                    { name: 'Text Anal Final', date: '2026-05-05' },
+                    { name: 'Portfolio', date: '2026-05-09' }
+                ], 
+                syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
+            },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: 'Exam 2', date: '2026-03-26' }, { name: 'Exam 3', date: '2026-04-23' }, { name: 'Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
         ];
 
         const rawColors = {
