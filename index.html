@@ -46,6 +46,32 @@
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
+        /* Flip Card Animation */
+        @keyframes flip-in {
+            0% { transform: perspective(400px) rotateX(-90deg); opacity: 0.5; }
+            100% { transform: perspective(400px) rotateX(0deg); opacity: 1; }
+        }
+        .animate-flip {
+            transform-origin: 50% 50%;
+            animation: flip-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .flip-card {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f3f4f6; /* Light mode bg */
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            min-width: 1.8ch; /* Use ch for character width scaling */
+            height: 1.2em;    /* Fixed height relative to font size */
+            text-align: center;
+            line-height: 1;
+        }
+        .dark .flip-card {
+            background-color: #1f2937; /* Dark mode bg */
+            color: white;
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -314,9 +340,9 @@
 
     <!-- COURSE MODAL -->
     <div id="course-modal-overlay" class="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity" onclick="window.closeCourseModal(event)">
-        <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden transform scale-95 opacity-0 transition-all">
+        <div class="modal-content bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform scale-95 opacity-0 transition-all">
             <!-- Header with Dynamic Color -->
-            <div id="modal-header" class="p-6 text-white relative shrink-0">
+            <div id="modal-header" class="p-6 text-white relative">
                 <button onclick="window.closeCourseModal(event)" class="absolute top-4 right-4 text-white/80 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -325,7 +351,7 @@
                 <p id="modal-subtitle" class="text-white/90 font-medium">Intro Synthetic & Spectr Lab</p>
             </div>
             
-            <div class="p-6 space-y-6 overflow-y-auto">
+            <div class="p-6 space-y-6">
                 <!-- Info Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex items-start gap-3">
@@ -416,8 +442,10 @@
                 <button onclick="window.setTimerMode('stopwatch')" id="tab-stopwatch" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Stopwatch</button>
             </div>
 
-            <div class="relative w-80 h-80 flex items-center justify-center group">
-                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+            <!-- Increased size from w-80 h-80 to w-96 h-96 to prevent clipping -->
+            <div class="relative w-96 h-96 flex items-center justify-center group">
+                <!-- Added ID to SVG to toggle visibility -->
+                <svg id="timer-ring-svg" class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 200 200">
                     <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="6" class="text-gray-100 dark:text-gray-800"/>
                     <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="6" class="text-indigo-500 timer-circle" stroke-dasharray="565.48" stroke-dashoffset="0" stroke-linecap="round" />
                 </svg>
@@ -425,13 +453,13 @@
                 <!-- Inner Container for Centered Content -->
                 <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
                     <div id="timer-display-container" class="text-center group-edit">
-                        <div id="timer-display" 
-                             onclick="window.startEditingTimer()" 
-                             class="text-7xl font-mono font-bold text-gray-900 dark:text-white tracking-tighter leading-none cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                             title="Click to edit duration">
-                             25:00
+                        <!-- FLIP CARD DISPLAY STRUCTURE -->
+                        <div id="timer-display" onclick="window.startEditingTimer()" class="flex gap-2 justify-center items-center cursor-pointer select-none">
+                             <div id="t-min" class="flip-card text-7xl font-mono font-bold leading-none">25</div>
+                             <div class="text-7xl font-mono font-bold leading-none pb-1">:</div>
+                             <div id="t-sec" class="flip-card text-7xl font-mono font-bold leading-none">00</div>
                         </div>
-                        <p id="timer-label" class="text-xs text-gray-400 font-medium uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</p>
+                        <p id="timer-label" class="text-xs text-gray-400 font-medium uppercase tracking-widest mt-4 opacity-0 group-hover:opacity-100 transition-opacity">Click to Edit</p>
                     </div>
 
                     <div id="timer-edit-container" class="hidden flex-col items-center gap-2">
@@ -494,7 +522,7 @@
         // --- DATA CONSTANTS (schedule, colors, etc) ---
         const schedule = [
             { day: 'mon', title: 'CHE 383 - 01', type: 'Lecture', start: '08:25', end: '09:20', loc: 'Harriman Hall 137', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec', exams: [{ name: '📅 Midterm 1', date: '2025-02-25' }, { name: '📅 Midterm 2', date: '2025-04-05' }, { name: '📅 Final', date: '2025-05-14' }] },
-            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'mon', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Frey Hall 104', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
             { day: 'mon', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: '📅 Exam 1', date: '2026-03-11'}, {name: '📅 Exam 2', date: '2026-04-22'}, {name: '📅 Final', date: '2026-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
             { day: 'tue', title: 'CHE 383 - L03', type: 'Laboratory', start: '08:30', end: '12:20', loc: 'Chemistry Bldg 354', prof: 'Sajjad Hossain', fullTitle: 'Intro Synthtc & Spectr Lab Tec (Lab)', exams: [], syllabusUrl: 'https://drive.google.com/file/d/1ojjo7SloxQthEvrz4cH5xpYUHGNi8dQh/view?usp=drive_link' },
             { 
@@ -517,9 +545,9 @@
                 ], 
                 syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
             },
-            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'wed', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Frey Hall 104', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
             { day: 'wed', title: 'AMS 161 - 02', type: 'Lecture', start: '15:30', end: '16:50', loc: 'Engineering Bldg 143', prof: 'Hyun-Kyung Lim', fullTitle: 'Applied Calculus II', exams: [{name: '📅 Exam 1', date: '2026-03-11'}, {name: '📅 Exam 2', date: '2026-04-22'}, {name: '📅 Final', date: '2026-05-18'}], syllabusUrl: 'https://drive.google.com/file/d/1PI_jBSWkn1fkh9ikCHSBEMdls9KeQ7ut/view?usp=drive_link' },
-            { day: 'wed', title: 'SBU 102 - S317', type: 'Seminar', start: '14:00', end: '15:20', loc: 'Humanities 3014', prof: 'TBA', fullTitle: 'Undergraduate College Seminar', exams: [] },
+            { day: 'wed', title: 'SBU 102 - S317', type: 'Seminar', start: '14:00', end: '15:20', loc: 'Humanities 3014', prof: 'Gary Halada', fullTitle: 'Undergraduate College Seminar', exams: [] },
             { day: 'thu', title: 'CHE 331 - R02', type: 'Recitation', start: '09:30', end: '10:50', loc: 'Frey Hall 119', prof: 'Zachary Katsamanis', fullTitle: 'Molecular Science II (Rec)', exams: [], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
             { 
                 day: 'thu', 
@@ -541,7 +569,7 @@
                 ], 
                 syllabusUrl: 'https://drive.google.com/file/d/1viyoBB69XLDOnwOrh9YjkAddwSEGzhGy/view?usp=sharing' 
             },
-            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Simons Center 103', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
+            { day: 'fri', title: 'CHE 331 - 01', type: 'Lecture', start: '11:00', end: '11:55', loc: 'Frey Hall 104', prof: 'Isaac Carrico', fullTitle: 'Molecular Science II', exams: [{ name: '📅 Exam 1', date: '2026-02-19' }, { name: '📅 Exam 2', date: '2026-03-26' }, { name: '📅 Exam 3', date: '2026-04-23' }, { name: '📅 Final', date: '2026-05-15' }], syllabusUrl: 'https://drive.google.com/file/d/1NwHxjQGFkSVgSFXOrmbW9t_KVc0f699p/view?usp=drive_link' },
         ];
 
         const rawColors = {
@@ -927,21 +955,45 @@
             
             const minutes = Math.floor(current / 60);
             const seconds = current % 60;
-            const display = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            document.getElementById('timer-display').innerText = display;
+            const minStr = minutes < 10 ? '0' + minutes : minutes;
+            const secStr = seconds < 10 ? '0' + seconds : seconds;
+
+            const tMin = document.getElementById('t-min');
+            const tSec = document.getElementById('t-sec');
             
+            if (tMin && tMin.innerText !== String(minStr)) {
+                 tMin.innerText = minStr;
+                 tMin.classList.remove('animate-flip');
+                 void tMin.offsetWidth; // trigger reflow
+                 tMin.classList.add('animate-flip');
+            }
+            if (tSec && tSec.innerText !== String(secStr)) {
+                 tSec.innerText = secStr;
+                 tSec.classList.remove('animate-flip');
+                 void tSec.offsetWidth;
+                 tSec.classList.add('animate-flip');
+            }
+
             // Update Circle
             let rawFraction = 0;
             if (timerMode === 'countdown') {
                 rawFraction = timeLeft / defaultTime;
             } else {
-                // For stopwatch, loop ring every 60 mins
+                // Stopwatch: Fill up the ring (0 -> 1) over 60 mins (3600s)
                 rawFraction = (stopwatchSeconds % 3600) / 3600; 
-                rawFraction = 1 - rawFraction; 
             }
             
-            const fraction = rawFraction - (1 / total) * (1 - rawFraction);
-            const offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
+            // Adjust strokeDashoffset based on fraction (full = 0 offset, empty = full array)
+            // Flip logic for stopwatch: we want it to grow from 0 (full offset) to 1 (0 offset)
+            let offset;
+            if (timerMode === 'stopwatch') {
+                 // start empty, fill up
+                 offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
+            } else {
+                 // countdown: start full, empty out
+                 // rawFraction is 1 at start, 0 at end
+                 offset = FULL_DASH_ARRAY - (rawFraction * FULL_DASH_ARRAY);
+            }
             document.getElementById('timer-progress').style.strokeDashoffset = offset;
 
             // Show/Hide Edit Hint
@@ -964,6 +1016,7 @@
             const controls = document.getElementById('countdown-controls');
             const display = document.getElementById('timer-display');
             const label = document.getElementById('timer-label');
+            const timerRing = document.getElementById('timer-ring-svg'); // Ref to SVG
             
             if (mode === 'countdown') {
                 tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
@@ -972,6 +1025,7 @@
                 display.classList.add('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
                 display.classList.remove('cursor-default');
                 label.classList.remove('invisible');
+                timerRing.classList.remove('hidden'); // Show circle
             } else {
                 tStopwatch.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white";
                 tCountdown.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
@@ -979,6 +1033,7 @@
                 display.classList.remove('cursor-pointer', 'hover:text-indigo-600', 'dark:hover:text-indigo-400');
                 display.classList.add('cursor-default');
                 label.classList.add('invisible');
+                timerRing.classList.add('hidden'); // Hide circle
             }
         };
 
